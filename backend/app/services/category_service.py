@@ -41,7 +41,6 @@ class CategoryService:
     @staticmethod
     async def reorder(db: AsyncSession, restaurant_id: uuid.UUID, ids: list[str]):
         # naive reordering: set position according to list index
-        from app.models.category import Category
         for idx, cid in enumerate(ids, start=1):
             cat = await get_category_by_id(db, uuid.UUID(cid))
             if not cat:

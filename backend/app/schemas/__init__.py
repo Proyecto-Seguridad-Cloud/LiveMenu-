@@ -1,5 +1,10 @@
 from .auth import RegisterRequest as RegisterRequest
 from .auth import LoginRequest as LoginRequest
 from .auth import TokenResponse as TokenResponse
-from .restaurant import RestaurantCreate, RestaurantUpdate, RestaurantOut
-from .category import CategoryCreate, CategoryUpdate, CategoryOut, ReorderRequest
+from .restaurant import RestaurantCreate as RestaurantCreate
+from .restaurant import RestaurantUpdate as RestaurantUpdate
+from .restaurant import RestaurantOut as RestaurantOut
+from .category import CategoryCreate as CategoryCreate
+from .category import CategoryUpdate as CategoryUpdate
+from .category import CategoryOut as CategoryOut
+from .category import ReorderRequest as ReorderRequest
