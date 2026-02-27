@@ -28,7 +28,3 @@ async def login(request: Request,payload: LoginRequest, db: AsyncSession = Depen
     return TokenResponse(access_token=token, token_type="bearer")
 
 
-
-@router.get("/me")
-async def me(current_user = Depends(get_current_user)):
-    return {"id": str(current_user.id), "email": current_user.email, "full_name": current_user.full_name}
