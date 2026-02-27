@@ -7,7 +7,8 @@ class Settings(BaseSettings):
     DB_NAME: str
     DB_HOST: str
     DB_PORT: int = 5432
-    #JWT_SECRET: str = 
+    JWT_SECRET_KEY: str 
+    JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60
     ENVIRONMENT: str = "development"
 
