@@ -5,7 +5,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.services.auth_service import AuthService
 from app.schemas import RegisterRequest, LoginRequest, TokenResponse
-from app.core.security import get_current_user
 
 limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
