@@ -7,6 +7,7 @@ from app.db.base import Base
 from app.models import user  # noqa: F401
 from app.models import restaurant  # noqa: F401
 from app.models import category  # noqa: F401
+from app.models import dish  # noqa: F401
 
 config = context.config
 fileConfig(config.config_file_name)
