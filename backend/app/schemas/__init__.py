@@ -8,3 +8,9 @@ from .category import CategoryCreate as CategoryCreate
 from .category import CategoryUpdate as CategoryUpdate
 from .category import CategoryOut as CategoryOut
 from .category import ReorderRequest as ReorderRequest
+from .dish import DishCreate as DishCreate
+from .dish import DishUpdate as DishUpdate
+from .dish import DishOut as DishOut
+from .dish import DishAvailabilityUpdate as DishAvailabilityUpdate
+from .upload import UploadImageResponse as UploadImageResponse
+from .upload import DeleteUploadResponse as DeleteUploadResponse

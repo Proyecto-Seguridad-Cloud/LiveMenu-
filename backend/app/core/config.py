@@ -11,6 +11,15 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60
     ENVIRONMENT: str = "development"
+    STORAGE_PROVIDER: str = "local"
+    UPLOAD_DIR: str = "uploads"
+    IMAGE_MAX_SIZE_MB: int = 5
+    IMAGE_WORKERS: int = 2
+    PUBLIC_BASE_URL: str = "http://localhost:8000"
+    GCS_BUCKET_NAME: str = ""
+    GCS_PROJECT_ID: str = ""
+    GCS_CREDENTIALS_FILE: str = ""
+    GCS_PUBLIC_BASE_URL: str = "https://storage.googleapis.com"
 
     @property
     def DATABASE_URL(self) -> str:
