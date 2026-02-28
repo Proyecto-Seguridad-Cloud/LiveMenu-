@@ -1,4 +1,5 @@
 import uuid
+from typing import List
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.category_repository import (
@@ -39,7 +40,7 @@ class CategoryService:
         return await delete_category(db, category)
 
     @staticmethod
-    async def reorder(db: AsyncSession, restaurant_id: uuid.UUID, ids: list[str]):
+    async def reorder(db: AsyncSession, restaurant_id: uuid.UUID, ids: List[str]):
         # naive reordering: set position according to list index
         for idx, cid in enumerate(ids, start=1):
             cat = await get_category_by_id(db, uuid.UUID(cid))

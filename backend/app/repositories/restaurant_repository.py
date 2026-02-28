@@ -6,7 +6,7 @@ from app.models.restaurant import Restaurant
 
 async def get_restaurant_by_owner(db: AsyncSession, owner_id: uuid.UUID) -> Restaurant | None:
     result = await db.execute(select(Restaurant).where(Restaurant.owner_id == owner_id))
-    return result.scalar_one_or_none()
+    return result.scalars().first()
 
 
 async def get_restaurant_by_slug(db: AsyncSession, slug: str) -> Restaurant | None:

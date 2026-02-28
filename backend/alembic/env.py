@@ -5,6 +5,8 @@ from alembic import context
 from app.core.config import settings
 from app.db.base import Base
 from app.models import user  # noqa: F401
+from app.models import restaurant  # noqa: F401
+from app.models import category  # noqa: F401
 
 config = context.config
 fileConfig(config.config_file_name)
