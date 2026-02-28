@@ -25,6 +25,10 @@ class RestaurantService:
 
     @staticmethod
     async def create(db: AsyncSession, owner_id: uuid.UUID, name: str, **kwargs):
+        existing_owner_restaurant = await get_restaurant_by_owner(db, owner_id)
+        if existing_owner_restaurant:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="El usuario ya tiene un restaurante")
+
         base = _slugify(name)
         slug = base
         existing = await get_restaurant_by_slug(db, slug)

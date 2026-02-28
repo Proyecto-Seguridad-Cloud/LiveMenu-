@@ -1,4 +1,5 @@
-from pydantic import BaseModel, Field, HttpUrl
+from uuid import UUID
+from pydantic import BaseModel, Field, HttpUrl, ConfigDict
 from typing import Optional
 
 
@@ -21,8 +22,8 @@ class RestaurantUpdate(BaseModel):
 
 
 class RestaurantOut(BaseModel):
-    id: str
-    owner_id: str
+    id: UUID
+    owner_id: UUID
     name: str
     slug: str
     description: Optional[str]
@@ -31,5 +32,4 @@ class RestaurantOut(BaseModel):
     address: Optional[str]
     hours: Optional[dict]
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

@@ -1,4 +1,5 @@
-from pydantic import BaseModel, Field
+from uuid import UUID
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 
 
@@ -14,15 +15,14 @@ class CategoryUpdate(BaseModel):
 
 
 class CategoryOut(BaseModel):
-    id: str
-    restaurant_id: str
+    id: UUID
+    restaurant_id: UUID
     name: str
     description: Optional[str]
     position: int
     active: bool
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ReorderRequest(BaseModel):
