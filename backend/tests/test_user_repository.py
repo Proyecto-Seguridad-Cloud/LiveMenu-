@@ -1,5 +1,3 @@
-from types import SimpleNamespace
-
 import pytest
 
 from app.repositories.user_repository import create_user
