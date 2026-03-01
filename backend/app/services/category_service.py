@@ -23,6 +23,13 @@ class CategoryService:
         return await get_category_by_id(db, category_id)
 
     @staticmethod
+    async def get_owned(db: AsyncSession, restaurant_id: uuid.UUID, category_id: uuid.UUID):
+        category = await get_category_by_id(db, category_id)
+        if not category or category.restaurant_id != restaurant_id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoría no encontrada")
+        return category
+
+    @staticmethod
     async def create(db: AsyncSession, restaurant_id: uuid.UUID, name: str, description: str | None = None):
         pos = await max_position(db, restaurant_id)
         payload = {"restaurant_id": restaurant_id, "name": name, "description": description, "position": pos + 1}
@@ -41,10 +48,14 @@ class CategoryService:
 
     @staticmethod
     async def reorder(db: AsyncSession, restaurant_id: uuid.UUID, ids: List[str]):
-        # naive reordering: set position according to list index
         for idx, cid in enumerate(ids, start=1):
-            cat = await get_category_by_id(db, uuid.UUID(cid))
-            if not cat:
+            try:
+                category_id = uuid.UUID(cid)
+            except ValueError:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"ID inválido: {cid}")
+
+            cat = await get_category_by_id(db, category_id)
+            if not cat or cat.restaurant_id != restaurant_id:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Category {cid} not found")
             cat.position = idx
             db.add(cat)

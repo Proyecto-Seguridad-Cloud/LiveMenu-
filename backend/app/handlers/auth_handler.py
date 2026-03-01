@@ -3,8 +3,9 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
+from app.core.security import get_current_user
 from app.services.auth_service import AuthService
-from app.schemas import RegisterRequest, LoginRequest, TokenResponse
+from app.schemas import RegisterRequest, LoginRequest, TokenResponse, LogoutResponse
 
 limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -25,5 +26,20 @@ async def register(request: Request, payload: RegisterRequest, db: AsyncSession 
 async def login(request: Request,payload: LoginRequest, db: AsyncSession = Depends(get_db)):
     token = await AuthService.login(db, email=payload.email, password=payload.password)
     return TokenResponse(access_token=token, token_type="bearer")
+
+
+@router.post("/refresh", response_model=TokenResponse)
+@limiter.limit("10/minute")
+async def refresh(request: Request, current_user=Depends(get_current_user)):
+    _ = request
+    token = AuthService.refresh(current_user.id)
+    return TokenResponse(access_token=token, token_type="bearer")
+
+
+@router.post("/logout", response_model=LogoutResponse)
+@limiter.limit("10/minute")
+async def logout(request: Request, current_user=Depends(get_current_user)):
+    _ = request, current_user
+    return AuthService.logout()
 
 

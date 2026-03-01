@@ -68,3 +68,18 @@ async def test_login_success(monkeypatch):
 
     token = await AuthService.login(SimpleNamespace(), "x@x.com", "Password123")
     assert token.startswith("token-")
+
+
+def test_refresh_issues_new_access_token(monkeypatch):
+    user_id = uuid4()
+    monkeypatch.setattr(auth_service, "create_access_token", lambda uid: f"new-token-{uid}")
+
+    token = AuthService.refresh(user_id)
+
+    assert token.startswith("new-token-")
+
+
+def test_logout_returns_success_message():
+    result = AuthService.logout()
+
+    assert result == {"message": "Sesión cerrada correctamente"}

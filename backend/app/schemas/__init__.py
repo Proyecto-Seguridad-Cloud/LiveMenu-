@@ -1,6 +1,7 @@
 from .auth import RegisterRequest as RegisterRequest
 from .auth import LoginRequest as LoginRequest
 from .auth import TokenResponse as TokenResponse
+from .auth import LogoutResponse as LogoutResponse
 from .restaurant import RestaurantCreate as RestaurantCreate
 from .restaurant import RestaurantUpdate as RestaurantUpdate
 from .restaurant import RestaurantOut as RestaurantOut

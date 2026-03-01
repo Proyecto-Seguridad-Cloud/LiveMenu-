@@ -48,10 +48,11 @@ async def test_create_handles_repository_error(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_reorder_updates_positions(monkeypatch):
+    restaurant_id = uuid4()
     ids = [str(uuid4()), str(uuid4())]
     cats = {
-        ids[0]: SimpleNamespace(position=0),
-        ids[1]: SimpleNamespace(position=0),
+        ids[0]: SimpleNamespace(position=0, restaurant_id=restaurant_id),
+        ids[1]: SimpleNamespace(position=0, restaurant_id=restaurant_id),
     }
 
     async def fake_get_by_id(db, cat_id):
@@ -76,7 +77,7 @@ async def test_reorder_updates_positions(monkeypatch):
     monkeypatch.setattr(category_service, "get_category_by_id", fake_get_by_id)
     monkeypatch.setattr(category_service, "list_categories_by_restaurant", fake_list)
 
-    result = await CategoryService.reorder(db, uuid4(), ids)
+    result = await CategoryService.reorder(db, restaurant_id, ids)
 
     assert db.commit_called is True
     assert cats[ids[0]].position == 1
@@ -98,3 +99,76 @@ async def test_reorder_raises_when_missing_category(monkeypatch):
         await CategoryService.reorder(db, uuid4(), [str(uuid4())])
 
     assert exc.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_get_owned_returns_category_for_same_restaurant(monkeypatch):
+    restaurant_id = uuid4()
+    category_id = uuid4()
+    category = SimpleNamespace(id=category_id, restaurant_id=restaurant_id)
+
+    async def fake_get_by_id(db, incoming_id):
+        _ = db
+        if incoming_id == category_id:
+            return category
+        return None
+
+    monkeypatch.setattr(category_service, "get_category_by_id", fake_get_by_id)
+
+    result = await CategoryService.get_owned(SimpleNamespace(), restaurant_id, category_id)
+
+    assert result == category
+
+
+@pytest.mark.asyncio
+async def test_get_owned_raises_when_other_restaurant(monkeypatch):
+    restaurant_id = uuid4()
+    other_restaurant_id = uuid4()
+    category_id = uuid4()
+
+    async def fake_get_by_id(db, incoming_id):
+        _ = db, incoming_id
+        return SimpleNamespace(id=category_id, restaurant_id=other_restaurant_id)
+
+    monkeypatch.setattr(category_service, "get_category_by_id", fake_get_by_id)
+
+    with pytest.raises(HTTPException) as exc:
+        await CategoryService.get_owned(SimpleNamespace(), restaurant_id, category_id)
+
+    assert exc.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_reorder_raises_when_category_belongs_to_other_restaurant(monkeypatch):
+    owner_restaurant_id = uuid4()
+    external_restaurant_id = uuid4()
+    category_id = uuid4()
+
+    async def fake_get_by_id(db, incoming_id):
+        _ = db, incoming_id
+        return SimpleNamespace(id=category_id, restaurant_id=external_restaurant_id, position=0)
+
+    monkeypatch.setattr(category_service, "get_category_by_id", fake_get_by_id)
+
+    db = SimpleNamespace(add=lambda *_: None, commit=lambda: None)
+
+    with pytest.raises(HTTPException) as exc:
+        await CategoryService.reorder(db, owner_restaurant_id, [str(category_id)])
+
+    assert exc.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_reorder_raises_when_invalid_uuid(monkeypatch):
+    async def fake_get_by_id(db, incoming_id):
+        _ = db, incoming_id
+        return None
+
+    monkeypatch.setattr(category_service, "get_category_by_id", fake_get_by_id)
+
+    db = SimpleNamespace(add=lambda *_: None, commit=lambda: None)
+
+    with pytest.raises(HTTPException) as exc:
+        await CategoryService.reorder(db, uuid4(), ["not-a-uuid"])
+
+    assert exc.value.status_code == 400
