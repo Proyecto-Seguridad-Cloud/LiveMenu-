@@ -30,7 +30,7 @@ Sistema para gestión de menú digital con:
 11. [Troubleshooting](#troubleshooting)
 12. [Buenas prácticas de seguridad](#buenas-prácticas-de-seguridad)
 
-## Arquitectura (Diagrama)
+## Diagrama de Arquitectura
 
 <p align="center">
 	<a href="./docs/Diagrama%20de%20Arquitectura%20de%20LiveMenu.png" target="_blank">
