@@ -1,217 +1,154 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { API_BASE_URL } from '../../config/api'
-import { useAuth } from '../../context/AuthContext'
-import { fetchQrBlob, type QrFormat, type QrSize } from '../../services/qr'
-import { restaurantService } from '../../services/restaurant'
-
-const SIZE_OPTIONS: { key: QrSize; label: string }[] = [
-  { key: 'sm', label: 'S' },
-  { key: 'md', label: 'M' },
-  { key: 'lg', label: 'L' },
-  { key: 'xl', label: 'XL' },
-]
-
-const FORMAT_OPTIONS: { key: QrFormat; label: string }[] = [
-  { key: 'png', label: 'PNG' },
-  { key: 'svg', label: 'SVG' },
-]
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { QRCodeCanvas } from "qrcode.react";
+import { Download, Copy, ExternalLink, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "../../context/AuthContext";
+import { restaurantService } from "../../services/restaurant";
 
 export function QrPage() {
-  const { token } = useAuth()
+  const { token } = useAuth();
+  const qrRef = useRef<HTMLDivElement>(null);
 
-  const [size, setSize] = useState<QrSize>('md')
-  const [format, setFormat] = useState<QrFormat>('png')
-  const [previewUrl, setPreviewUrl] = useState('')
-  const [restaurantSlug, setRestaurantSlug] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [errorMessage, setErrorMessage] = useState('')
-  const [successMessage, setSuccessMessage] = useState('')
-  const [restaurantMissing, setRestaurantMissing] = useState(false)
+  const [restaurantSlug, setRestaurantSlug] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [restaurantMissing, setRestaurantMissing] = useState(false);
 
-  const menuUrl = useMemo(() => {
-    if (!restaurantSlug) {
-      return ''
-    }
-    return `${API_BASE_URL}/m/${restaurantSlug}`
-  }, [restaurantSlug])
+  const menuUrl = restaurantSlug
+    ? `${window.location.origin}/m/${restaurantSlug}`
+    : "";
 
   useEffect(() => {
-    let active = true
-    let currentObjectUrl = ''
-
-    async function loadQr() {
+    async function loadSlug() {
       if (!token) {
-        setLoading(false)
-        return
+        setLoading(false);
+        return;
       }
-
-      setLoading(true)
-      setErrorMessage('')
-      setSuccessMessage('')
-      setRestaurantMissing(false)
-
       try {
-        const restaurant = await restaurantService.getCurrent(token)
-        if (!active) {
-          return
-        }
-        setRestaurantSlug(restaurant.slug)
-
-        const blob = await fetchQrBlob(token, format, size)
-        if (!active) {
-          return
-        }
-
-        currentObjectUrl = URL.createObjectURL(blob)
-        setPreviewUrl((prev) => {
-          if (prev) {
-            URL.revokeObjectURL(prev)
-          }
-          return currentObjectUrl
-        })
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'No fue posible cargar el QR'
-        if (message.toLowerCase().includes('restaurante no encontrado')) {
-          setRestaurantMissing(true)
-        } else {
-          setErrorMessage(message)
-        }
+        const restaurant = await restaurantService.getCurrent(token);
+        setRestaurantSlug(restaurant.slug);
+      } catch {
+        setRestaurantMissing(true);
       } finally {
-        if (active) {
-          setLoading(false)
-        }
+        setLoading(false);
       }
     }
+    void loadSlug();
+  }, [token]);
 
-    void loadQr()
+  const handleDownload = useCallback(() => {
+    const canvas = qrRef.current?.querySelector("canvas");
+    if (!canvas) return;
 
-    return () => {
-      active = false
-      if (currentObjectUrl) {
-        URL.revokeObjectURL(currentObjectUrl)
-      }
-    }
-  }, [token, format, size])
+    const link = document.createElement("a");
+    link.download = `menu-${restaurantSlug}-qr.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+    toast.success("QR descargado");
+  }, [restaurantSlug]);
 
-  function handleDownload() {
-    if (!previewUrl || !restaurantSlug) {
-      return
-    }
-
-    const link = document.createElement('a')
-    link.href = previewUrl
-    link.download = `menu-${restaurantSlug}-${size}.${format}`
-    link.click()
-  }
-
-  async function handleCopyMenuUrl() {
-    if (!menuUrl) {
-      return
-    }
-
+  async function handleCopyUrl() {
+    if (!menuUrl) return;
     try {
-      await navigator.clipboard.writeText(menuUrl)
-      setSuccessMessage('Enlace del menú copiado al portapapeles')
+      await navigator.clipboard.writeText(menuUrl);
+      toast.success("Enlace copiado al portapapeles");
     } catch {
-      setErrorMessage('No fue posible copiar el enlace del menú')
+      toast.error("No fue posible copiar el enlace");
     }
   }
 
   if (loading) {
     return (
-      <section className="content-grid">
-        <article className="card">
-          <h1 className="title">Mi Código QR</h1>
-          <p className="muted">Cargando QR...</p>
-        </article>
-      </section>
-    )
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   if (restaurantMissing) {
     return (
-      <section className="content-grid">
-        <article className="card">
-          <h1 className="title">Mi Código QR</h1>
-          <p className="muted">Debes crear tu restaurante antes de generar el código QR.</p>
-          <Link className="btn btn-primary" to="/admin/restaurant">
-            Ir a Mi Restaurante
-          </Link>
-        </article>
-      </section>
-    )
+      <Card>
+        <CardHeader>
+          <CardTitle>Mi Código QR</CardTitle>
+          <CardDescription>
+            Debes crear tu restaurante antes de generar el código QR.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild>
+            <Link to="/admin/restaurant">Ir a Mi Restaurante</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <section className="content-grid">
-      <article className="card">
-        <h1 className="title">Mi Código QR</h1>
-        <p className="muted">Descarga QR por formato y tamaño.</p>
-      </article>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Mi Código QR</h1>
+        <p className="text-muted-foreground">
+          Descarga e imprime el QR para que tus clientes accedan al menú.
+        </p>
+      </div>
 
-      <article className="card">
-        <div
-          style={{
-            display: 'grid',
-            placeItems: 'center',
-            padding: 24,
-            border: '1px solid var(--lm-slate-200)',
-            borderRadius: 12,
-            marginBottom: 14,
-          }}
-        >
-          {previewUrl ? (
-            <img src={previewUrl} alt="Vista previa QR" style={{ width: 180, height: 180, objectFit: 'contain' }} />
-          ) : (
-            <div style={{ width: 180, height: 180, background: 'linear-gradient(135deg, #f1f5f9, #e2e8f0)' }} />
-          )}
-          <p className="muted">Preview QR</p>
-        </div>
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* QR Preview */}
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-10">
+            <div ref={qrRef} className="rounded-xl border bg-white p-6">
+              <QRCodeCanvas
+                value={menuUrl}
+                size={220}
+                level="H"
+                includeMargin={false}
+              />
+            </div>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Escanea para abrir el menú
+            </p>
+          </CardContent>
+        </Card>
 
-        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-          {SIZE_OPTIONS.map((option) => (
-            <button
-              key={option.key}
-              className={`btn ${size === option.key ? 'btn-primary' : 'btn-ghost'}`}
-              type="button"
-              onClick={() => setSize(option.key)}
+        {/* Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Opciones</CardTitle>
+            <CardDescription>
+              URL del menú:{" "}
+              <code className="text-xs break-all">{menuUrl}</code>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button className="w-full" onClick={handleDownload}>
+              <Download className="mr-2 size-4" />
+              Descargar QR (PNG)
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleCopyUrl}
             >
-              {option.label}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          {FORMAT_OPTIONS.map((option) => (
-            <button
-              key={option.key}
-              className={`btn ${format === option.key ? 'btn-primary' : 'btn-ghost'}`}
-              type="button"
-              onClick={() => setFormat(option.key)}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-
-        {errorMessage && <p className="error-message">{errorMessage}</p>}
-        {successMessage && <p className="success-message">{successMessage}</p>}
-
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button className="btn btn-primary" type="button" onClick={handleDownload} disabled={!previewUrl}>
-            Descargar
-          </button>
-          <button className="btn btn-ghost" type="button" onClick={handleCopyMenuUrl} disabled={!menuUrl}>
-            Copiar enlace
-          </button>
-          {menuUrl && (
-            <a className="btn btn-ghost" href={menuUrl} target="_blank" rel="noreferrer">
-              Abrir menú
-            </a>
-          )}
-        </div>
-      </article>
-    </section>
-  )
+              <Copy className="mr-2 size-4" />
+              Copiar enlace del menú
+            </Button>
+            <Button variant="outline" className="w-full" asChild>
+              <a href={menuUrl} target="_blank" rel="noreferrer">
+                <ExternalLink className="mr-2 size-4" />
+                Abrir menú en nueva pestaña
+              </a>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 }
