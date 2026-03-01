@@ -10,6 +10,7 @@ from app.repositories.category_repository import (
     delete_category,
     max_position,
 )
+from app.repositories.dish_repository import list_dishes
 
 
 class CategoryService:
@@ -44,6 +45,10 @@ class CategoryService:
 
     @staticmethod
     async def delete(db: AsyncSession, category):
+        # prevent deleting category with existing (non-deleted) dishes
+        dishes = await list_dishes(db, category_ids=[category.id])
+        if dishes:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No se puede eliminar categoría con platos asociados")
         return await delete_category(db, category)
 
     @staticmethod
