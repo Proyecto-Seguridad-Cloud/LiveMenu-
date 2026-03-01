@@ -17,16 +17,34 @@ Sistema para gestión de menú digital con:
 
 ## Tabla de contenido
 
-1. [Requisitos](#requisitos)
-2. [Inicio rápido (Docker)](#inicio-rápido-docker)
-3. [Variables de entorno (.env)](#variables-de-entorno-env)
-4. [Dockerización y servicios](#dockerización-y-servicios)
-5. [Ejecución sin Docker (opcional)](#ejecución-sin-docker-opcional)
-6. [Pruebas backend](#pruebas-backend)
-7. [Comandos útiles](#comandos-útiles)
-8. [Documentación técnica (Backend y Frontend)](#documentación-técnica-backend-y-frontend)
-9. [Troubleshooting](#troubleshooting)
-10. [Buenas prácticas de seguridad](#buenas-prácticas-de-seguridad)
+1. [Arquitectura (Diagrama)](#arquitectura-diagrama)
+2. [Video del proyecto](#video-del-proyecto)
+3. [Requisitos](#requisitos)
+4. [Inicio rápido (Docker)](#inicio-rápido-docker)
+5. [Variables de entorno (.env)](#variables-de-entorno-env)
+6. [Dockerización y servicios](#dockerización-y-servicios)
+7. [Ejecución sin Docker (opcional)](#ejecución-sin-docker-opcional)
+8. [Pruebas backend](#pruebas-backend)
+9. [Comandos útiles](#comandos-útiles)
+10. [Documentación técnica (Backend y Frontend)](#documentación-técnica-backend-y-frontend)
+11. [Troubleshooting](#troubleshooting)
+12. [Buenas prácticas de seguridad](#buenas-prácticas-de-seguridad)
+
+## Arquitectura (Diagrama)
+
+Inserta aquí la imagen del diagrama de arquitectura del sistema:
+
+```markdown
+![Diagrama de Arquitectura](./docs/architecture-diagram.png)
+```
+
+Si prefieres mantenerla en otra ruta, actualiza el path en el enlace anterior.
+
+## Video del proyecto
+
+Inserta aquí el enlace del video (demo, sustentación o walkthrough):
+
+- Link de video: `https://tu-enlace-aqui`
 
 ## Requisitos
 
@@ -80,6 +98,8 @@ DB_PORT=5432
 
 JWT_SECRET_KEY=
 JWT_ALGORITHM=HS256
+JWT_EXPIRE_MINUTES=60
+ENVIRONMENT=development
 
 STORAGE_PROVIDER=local
 UPLOAD_DIR=uploads
@@ -102,7 +122,7 @@ Estas variables también se configuran en el `.env` raíz:
 
 ```dotenv
 VITE_API_BASE_URL=http://localhost:8000
-VITE_APP_NAME=frontend
+VITE_APP_NAME=LiveMenu
 ```
 
 ## Dockerización y servicios
@@ -187,6 +207,8 @@ Si usas GCS, monta credenciales en `docker-compose.yml`:
 ```yaml
 - C:/ruta-local/livemenu-gcs.json:/run/secrets/livemenu-gcs.json:ro
 ```
+
+> Nota: este repositorio no deja una ruta local hardcodeada para credenciales GCS por seguridad/portabilidad. Si usas GCS, agrega el bind mount anterior en tu entorno local.
 
 ## Ejecución sin Docker (opcional)
 

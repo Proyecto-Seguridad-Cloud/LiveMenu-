@@ -13,6 +13,7 @@ from app.handlers.dish_handler import router as dish_router
 from app.handlers.upload_handler import router as upload_router
 from app.handlers.menu_handler import router as menu_router
 from app.handlers.qr_handler import router as qr_router
+from app.handlers.analytics_handler import router as analytics_router
 from app.services.image_worker_pool import image_worker_pool
 
 limiter = Limiter(key_func=get_remote_address)
@@ -36,6 +37,7 @@ app.include_router(dish_router)
 app.include_router(upload_router)
 app.include_router(menu_router)
 app.include_router(qr_router)
+app.include_router(analytics_router)
 
 Path(settings.UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")

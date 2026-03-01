@@ -7,6 +7,7 @@ import {
   UtensilsCrossed,
   Image,
   QrCode,
+  BarChart3,
   LogOut,
   X,
   Menu,
@@ -25,6 +26,7 @@ const navItems = [
   { label: "Platos", href: "/admin/dishes", icon: UtensilsCrossed },
   { label: "Imágenes", href: "/admin/uploads", icon: Image },
   { label: "Código QR", href: "/admin/qr", icon: QrCode },
+  { label: "Analíticas", href: "/admin/analytics", icon: BarChart3 },
 ];
 
 function SidebarContent({
@@ -48,13 +50,13 @@ function SidebarContent({
 
   return (
     <div className="flex h-full flex-col bg-sidebar">
-      <div className="flex items-center justify-between border-b px-4 py-5">
+      <div className="flex items-center justify-between border-b border-sidebar-border px-4 py-5">
         <div className="flex items-center gap-2">
           {restaurantLogoUrl ? (
             <img
               src={restaurantLogoUrl}
               alt="Logo restaurante"
-              className="size-8 rounded-xl border object-cover"
+              className="size-8 rounded-xl border border-sidebar-border object-cover"
               onError={onLogoError}
             />
           ) : (
@@ -62,14 +64,14 @@ function SidebarContent({
               L
             </span>
           )}
-          <h1 className="text-xl font-bold tracking-tight">LiveMenu</h1>
+          <h1 className="text-xl font-bold tracking-tight text-sidebar-accent-foreground">LiveMenu</h1>
         </div>
         {onClose && (
           <Button
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="md:hidden"
+            className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground md:hidden"
           >
             <X className="size-5" />
           </Button>
@@ -85,10 +87,10 @@ function SidebarContent({
             onClick={onClose}
             className={({ isActive }) =>
               cn(
-                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-200",
                 isActive
-                  ? "bg-secondary text-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  ? "bg-primary text-white"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )
             }
           >
@@ -99,12 +101,12 @@ function SidebarContent({
       </nav>
 
       {restaurantSlug && (
-        <div className="border-t px-3 py-3">
+        <div className="border-t border-sidebar-border px-3 py-3">
           <a
             href={`/m/${restaurantSlug}`}
             target="_blank"
             rel="noreferrer"
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sidebar-foreground transition-colors duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           >
             <ExternalLink className="size-4" />
             Ver menú público
@@ -112,10 +114,10 @@ function SidebarContent({
         </div>
       )}
 
-      <div className="border-t px-3 py-4">
+      <div className="border-t border-sidebar-border px-3 py-4">
         <button
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sidebar-foreground transition-colors duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         >
           <LogOut className="size-4" />
           Cerrar sesión
@@ -153,7 +155,7 @@ export function AdminLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop sidebar */}
-      <aside className="hidden w-64 shrink-0 border-r bg-sidebar md:block">
+      <aside className="hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar md:block">
         <SidebarContent
           restaurantSlug={restaurantSlug}
           restaurantLogoUrl={restaurantLogoUrl}

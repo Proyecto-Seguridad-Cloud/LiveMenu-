@@ -182,15 +182,28 @@ export function AdminDashboardPage() {
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   Menú
                 </CardTitle>
-                <span className="inline-flex size-8 items-center justify-center rounded-xl bg-secondary text-primary">
+                <a
+                  href={`/m/${slug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex size-8 items-center justify-center rounded-xl bg-secondary text-primary transition-colors hover:bg-secondary/80"
+                  aria-label="Abrir menú público"
+                >
                   <ExternalLink className="size-4" />
-                </span>
+                </a>
               </CardHeader>
               <CardContent className="px-4 pb-1">
                 <Badge variant="secondary" className="mb-1">
                   Activo
                 </Badge>
-                <p className="truncate text-xs text-muted-foreground">/m/{slug}</p>
+                <a
+                  href={`/m/${slug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block truncate text-xs text-muted-foreground hover:text-primary hover:underline"
+                >
+                  /m/{slug}
+                </a>
               </CardContent>
             </Card>
 
@@ -214,29 +227,35 @@ export function AdminDashboardPage() {
             <CardHeader>
               <CardTitle className="text-[20px] font-semibold">Acciones rápidas</CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-2 sm:flex sm:flex-wrap">
-              <Button variant="outline" className="w-full sm:w-auto" asChild>
+            <CardContent className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
+              <Button variant="outline" className="w-full justify-start" asChild>
                 <Link to="/admin/restaurant">
                   <Store className="mr-2 size-4" />
                   Restaurante
                 </Link>
               </Button>
-              <Button variant="outline" className="w-full sm:w-auto" asChild>
+              <Button variant="outline" className="w-full justify-start" asChild>
                 <Link to="/admin/categories">
                   <List className="mr-2 size-4" />
                   Categorías
                 </Link>
               </Button>
-              <Button className="w-full sm:w-auto" asChild>
+              <Button className="w-full justify-start" asChild>
                 <Link to="/admin/dishes/new">
                   <UtensilsCrossed className="mr-2 size-4" />
                   Nuevo plato
                 </Link>
               </Button>
-              <Button variant="outline" className="w-full sm:w-auto" asChild>
+              <Button variant="outline" className="w-full justify-start" asChild>
                 <Link to="/admin/qr">
                   <QrCode className="mr-2 size-4" />
                   Código QR
+                </Link>
+              </Button>
+              <Button variant="outline" className="w-full justify-start" asChild>
+                <Link to="/admin/analytics">
+                  <ExternalLink className="mr-2 size-4" />
+                  Analíticas
                 </Link>
               </Button>
             </CardContent>

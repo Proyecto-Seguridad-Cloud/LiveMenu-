@@ -19,3 +19,4 @@ from .menu import PublicMenuDish as PublicMenuDish
 from .menu import PublicMenuCategory as PublicMenuCategory
 from .menu import PublicMenuRestaurant as PublicMenuRestaurant
 from .menu import PublicMenuResponse as PublicMenuResponse
+from .analytics import AnalyticsSummary as AnalyticsSummary

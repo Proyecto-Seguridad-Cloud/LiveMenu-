@@ -12,6 +12,7 @@ import { DishesPage } from './pages/admin/DishesPage'
 import { DishFormPage } from './pages/admin/DishFormPage'
 import { UploadsPage } from './pages/admin/UploadsPage'
 import { QrPage } from './pages/admin/QrPage'
+import { AnalyticsPage } from './pages/admin/AnalyticsPage'
 import { PublicMenuPage } from './pages/public/PublicMenuPage'
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -70,6 +71,7 @@ function App() {
         <Route path="dishes/:id/edit" element={<DishFormPage mode="edit" />} />
         <Route path="uploads" element={<UploadsPage />} />
         <Route path="qr" element={<QrPage />} />
+        <Route path="analytics" element={<AnalyticsPage />} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />
