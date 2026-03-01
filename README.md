@@ -215,12 +215,6 @@ Ejecutar todo el suite:
 docker compose exec backend pytest -q
 ```
 
-Solo repositorios y servicios (recomendado para revisión rápida):
-
-```powershell
-docker compose exec backend pytest -q tests -k "repository or service"
-```
-
 Cobertura global:
 
 ```powershell
@@ -233,27 +227,39 @@ Cobertura con umbral mínimo:
 docker compose exec backend pytest --cov=app --cov-report=term-missing --cov-fail-under=60 -q
 ```
 
-### Solo tests de repositorios y servicios
+### Cobertura rápida por capas
 
-Ejecutar únicamente repositorios/servicios (rápido):
+Solo repositorios y servicios (recomendado para revisión rápida):
 
 ```powershell
 docker compose exec backend pytest -q tests -k "repository or service"
 ```
 
-Ejecutar por patrón de archivos (`*_repository.py` y `*_service.py`):
+Solo handlers:
+
+```powershell
+docker compose exec backend pytest -q tests/test_handlers.py --cov=app.handlers --cov-report=term-missing
+```
+
+Solo schemas:
+
+```powershell
+docker compose exec backend pytest -q tests/test_schemas.py --cov=app.schemas --cov-report=term-missing
+```
+
+Repositorios + servicios por patrón de archivos (`*_repository.py` y `*_service.py`):
 
 ```powershell
 docker compose exec backend pytest -q tests/test_*_repository.py tests/test_*_service.py
 ```
 
-Cobertura solo para repositorios y servicios:
+Cobertura repositorios + servicios:
 
 ```powershell
 docker compose exec backend pytest -q tests -k "repository or service" --cov=app.repositories --cov=app.services --cov-report=term-missing
 ```
 
-### Revisar cobertura baja en `storage_provider`
+### Cobertura enfocada: `storage_provider`
 
 Ejecutar tests específicos del storage provider con cobertura dedicada:
 
@@ -273,7 +279,23 @@ Copiar el reporte fuera del contenedor (opcional):
 docker compose cp backend:/app/htmlcov ./backend/htmlcov
 ```
 
-Tip: si `storage_provider` sigue alrededor de 37%, normalmente faltan rutas de `GCSStorageProvider` (inicialización, `save`, `delete_by_prefix`, `list_images`) y errores de configuración.
+Referencia rápida: con la batería actual de tests, `storage_provider` quedó en ~92% y el backend global en ~82%.
+
+### Tabla rápida: qué valida cada comando
+
+| Comando | Qué valida |
+|---|---|
+| `docker compose exec backend pytest -q` | Ejecuta todo el suite de pruebas backend. |
+| `docker compose exec backend pytest --cov=app --cov-report=term-missing -q` | Mide cobertura global y muestra líneas faltantes por archivo. |
+| `docker compose exec backend pytest --cov=app --cov-report=term-missing --cov-fail-under=60 -q` | Igual que el global, pero falla si la cobertura total baja de 60%. |
+| `docker compose exec backend pytest -q tests -k "repository or service"` | Corre solo pruebas de capa de repositorio y servicios. |
+| `docker compose exec backend pytest -q tests/test_handlers.py --cov=app.handlers --cov-report=term-missing` | Evalúa rutas/handlers y su cobertura específica. |
+| `docker compose exec backend pytest -q tests/test_schemas.py --cov=app.schemas --cov-report=term-missing` | Evalúa validaciones y modelos Pydantic (`schemas`). |
+| `docker compose exec backend pytest -q tests/test_*_repository.py tests/test_*_service.py` | Corre por patrón de archivo repositorios y servicios. |
+| `docker compose exec backend pytest -q tests -k "repository or service" --cov=app.repositories --cov=app.services --cov-report=term-missing` | Cobertura enfocada en repositorios y servicios. |
+| `docker compose exec backend pytest -q tests/test_storage_provider_local.py --cov=app.services.storage_provider --cov-report=term-missing` | Cobertura puntual de `storage_provider` y líneas faltantes. |
+| `docker compose exec backend pytest -q tests/test_storage_provider_local.py --cov=app.services.storage_provider --cov-report=html` | Genera reporte HTML para análisis visual de cobertura. |
+| `docker compose cp backend:/app/htmlcov ./backend/htmlcov` | Copia el reporte HTML desde el contenedor a tu máquina local. |
 
 ## Comandos útiles
 
