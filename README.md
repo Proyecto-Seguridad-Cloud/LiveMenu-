@@ -212,3 +212,52 @@ docker compose exec backend pytest -q \
 - Pruebas de repositorios/servicios implementadas y cobertura validada sobre el mínimo requerido.
 - Frontend pendiente de implementación en esta branch.
 
+## 10) Quick API examples (pruebas rápidas)
+
+Estos ejemplos usan `curl` desde la máquina local contra `http://localhost:8000` después de levantar los contenedores.
+
+- Registrar usuario:
+
+```bash
+curl -s -X POST http://localhost:8000/api/v1/auth/register \
+	-H "Content-Type: application/json" \
+	-d '{"email":"owner@example.com","full_name":"Owner","password":"secret123"}'
+```
+
+- Login (obtén `access_token`):
+
+```bash
+curl -s -X POST http://localhost:8000/api/v1/auth/login \
+	-H "Content-Type: application/json" \
+	-d '{"email":"owner@example.com","password":"secret123"}'
+
+# Respuesta: {"access_token":"<TOKEN>","token_type":"bearer"}
+```
+
+- Crear restaurante (usar token):
+
+```bash
+curl -s -X POST http://localhost:8000/api/v1/admin/restaurant \
+	-H "Authorization: Bearer <TOKEN>" \
+	-H "Content-Type: application/json" \
+	-d '{"name":"La Buena Mesa","description":"Demo"}'
+```
+
+- Listar categorías (requiere restaurante creado):
+
+```bash
+curl -s -X GET http://localhost:8000/api/v1/admin/categories \
+	-H "Authorization: Bearer <TOKEN>"
+```
+
+- Crear categoría:
+
+```bash
+curl -s -X POST http://localhost:8000/api/v1/admin/categories \
+	-H "Authorization: Bearer <TOKEN>" \
+	-H "Content-Type: application/json" \
+	-d '{"name":"Entradas","description":"Para compartir"}'
+```
+
+Nota: la documentación interactiva está disponible en `http://localhost:8000/docs` (Swagger UI) y `http://localhost:8000/redoc`.
+
