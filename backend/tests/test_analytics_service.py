@@ -86,7 +86,7 @@ async def test_record_scan_none_ip_sets_null_hash(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_get_summary_aggregates_counts(monkeypatch):
+async def test_get_summary_aggregates_all_metrics(monkeypatch):
     rid = uuid4()
 
     async def fake_count(db, restaurant_id, since=None):
@@ -98,15 +98,114 @@ async def test_get_summary_aggregates_counts(monkeypatch):
             SimpleNamespace(day=date(2025, 1, 2), count=3),
         ]
 
+    async def fake_unique(db, restaurant_id, since=None):
+        return 42
+
+    async def fake_by_hour(db, restaurant_id, since=None):
+        return [SimpleNamespace(hour=14, count=20)]
+
+    async def fake_by_weekday(db, restaurant_id, since=None):
+        return [SimpleNamespace(weekday=1, count=15)]
+
+    async def fake_devices(db, restaurant_id, since=None):
+        return [{"device": "Mobile", "count": 60}]
+
+    async def fake_referrers(db, restaurant_id, since=None):
+        return [{"source": "Directo", "count": 50}]
+
+    async def fake_new_ret(db, restaurant_id, since=None):
+        return {"new_visitors": 30, "returning_visitors": 12}
+
+    async def fake_session_dur(db, restaurant_id, since=None):
+        return 125.5
+
+    async def fake_top_cats(db, restaurant_id, since=None):
+        return [{"name": "Entradas", "count": 10}]
+
+    async def fake_top_dishes(db, restaurant_id, since=None):
+        return [{"name": "Ceviche", "count": 8}]
+
+    async def fake_scroll(db, restaurant_id, since=None):
+        return 0.72
+
     monkeypatch.setattr(analytics_service, "count_scans_by_restaurant", fake_count)
     monkeypatch.setattr(analytics_service, "scans_per_day", fake_per_day)
+    monkeypatch.setattr(analytics_service, "count_unique_visitors", fake_unique)
+    monkeypatch.setattr(analytics_service, "scans_by_hour", fake_by_hour)
+    monkeypatch.setattr(analytics_service, "scans_by_weekday", fake_by_weekday)
+    monkeypatch.setattr(analytics_service, "device_breakdown", fake_devices)
+    monkeypatch.setattr(analytics_service, "referrer_breakdown", fake_referrers)
+    monkeypatch.setattr(analytics_service, "new_vs_returning", fake_new_ret)
+    monkeypatch.setattr(analytics_service, "avg_session_duration", fake_session_dur)
+    monkeypatch.setattr(analytics_service, "top_categories", fake_top_cats)
+    monkeypatch.setattr(analytics_service, "top_dishes", fake_top_dishes)
+    monkeypatch.setattr(analytics_service, "avg_scroll_depth", fake_scroll)
 
     result = await AnalyticsService.get_summary(SimpleNamespace(), rid)
 
+    # Existing metrics
     assert result["total_scans"] == 100
     assert result["scans_last_7_days"] == 10
     assert result["scans_last_30_days"] == 10
     assert len(result["daily_breakdown"]) == 2
+    # Group A
+    assert result["unique_visitors"] == 42
+    assert result["hourly_breakdown"] == [{"hour": 14, "count": 20}]
+    assert result["weekday_breakdown"] == [{"weekday": 1, "label": "Lun", "count": 15}]
+    assert result["device_breakdown"] == [{"device": "Mobile", "count": 60}]
+    assert result["referrer_breakdown"] == [{"source": "Directo", "count": 50}]
+    assert result["new_visitors"] == 30
+    assert result["returning_visitors"] == 12
+    # Group B
+    assert result["avg_session_duration_seconds"] == 125.5
+    assert result["top_categories"] == [{"name": "Entradas", "count": 10}]
+    assert result["top_dishes"] == [{"name": "Ceviche", "count": 8}]
+    assert result["avg_scroll_depth"] == 72.0
+
+
+@pytest.mark.asyncio
+async def test_record_interactions_creates_batch(monkeypatch):
+    restaurant = SimpleNamespace(id=uuid4())
+
+    async def fake_get_restaurant(db, slug):
+        return restaurant
+
+    created = []
+
+    async def fake_bulk(db, events):
+        created.extend(events)
+
+    monkeypatch.setattr(analytics_service, "get_restaurant_by_slug", fake_get_restaurant)
+    monkeypatch.setattr(analytics_service, "bulk_create_interactions", fake_bulk)
+
+    events = [
+        {"event_type": "category_view", "payload": {"category_name": "Entradas"}},
+        {"event_type": "dish_view", "payload": {"dish_name": "Ceviche"}},
+    ]
+    await AnalyticsService.record_interactions(
+        SimpleNamespace(), "test-rest", session_id="sess123", events=events, ip="1.2.3.4"
+    )
+
+    assert len(created) == 2
+    assert created[0]["event_type"] == "category_view"
+    assert created[0]["restaurant_id"] == restaurant.id
+    assert created[0]["session_id"] == "sess123"
+    assert created[0]["ip_hash"] is not None
+
+
+@pytest.mark.asyncio
+async def test_record_interactions_raises_for_unknown_slug(monkeypatch):
+    async def fake_get_restaurant(db, slug):
+        return None
+
+    monkeypatch.setattr(analytics_service, "get_restaurant_by_slug", fake_get_restaurant)
+
+    with pytest.raises(HTTPException) as exc:
+        await AnalyticsService.record_interactions(
+            SimpleNamespace(), "nope", session_id="s", events=[]
+        )
+
+    assert exc.value.status_code == 404
 
 
 @pytest.mark.asyncio

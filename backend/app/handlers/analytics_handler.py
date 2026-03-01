@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import get_current_user
 from app.db.session import get_db
-from app.schemas.analytics import AnalyticsSummary
+from app.schemas.analytics import AnalyticsSummary, InteractionBatchIn
 from app.services.analytics_service import AnalyticsService
 from app.services.restaurant_service import RestaurantService
 
@@ -22,6 +22,20 @@ async def record_scan(
     referrer = request.headers.get("referer")
     await AnalyticsService.record_scan(
         db, slug, ip=ip, user_agent=user_agent, referrer=referrer
+    )
+
+
+@router.post("/api/v1/menu/{slug}/interactions", status_code=204)
+async def record_interactions(
+    slug: str,
+    body: InteractionBatchIn,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    ip = request.client.host if request.client else None
+    events = [ev.model_dump() for ev in body.events]
+    await AnalyticsService.record_interactions(
+        db, slug, session_id=body.session_id, events=events, ip=ip
     )
 
 

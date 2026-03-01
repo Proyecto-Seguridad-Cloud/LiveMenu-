@@ -4,6 +4,7 @@ import { Loader2, Phone, MapPin, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { menuService } from "../../services/menu";
 import { analyticsService } from "../../services/analytics";
+import { useInteractionTracker } from "../../hooks/useInteractionTracker";
 import type { PublicMenuResponse } from "../../types/menu";
 import { cn, formatCurrency } from "@/lib/utils";
 
@@ -15,9 +16,13 @@ export function PublicMenuPage() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const { trackEvent } = useInteractionTracker(slug);
+
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const dishRefs = useRef<Record<string, HTMLElement | null>>({});
   const navRef = useRef<HTMLDivElement>(null);
   const isScrollingRef = useRef(false);
+  const maxScrollDepthRef = useRef(0);
 
   useEffect(() => {
     async function loadMenu() {
@@ -52,7 +57,7 @@ export function PublicMenuPage() {
     }
   }, [slug]);
 
-  // IntersectionObserver for scroll tracking
+  // IntersectionObserver for scroll tracking (categories)
   useEffect(() => {
     if (!menu || menu.categories.length === 0) return;
 
@@ -62,6 +67,13 @@ export function PublicMenuPage() {
         for (const entry of entries) {
           if (entry.isIntersecting) {
             setActiveCategoryId(entry.target.id);
+            const cat = menu.categories.find((c) => c.id === entry.target.id);
+            if (cat) {
+              trackEvent("category_view", {
+                category_id: cat.id,
+                category_name: cat.name,
+              });
+            }
             break;
           }
         }
@@ -75,7 +87,62 @@ export function PublicMenuPage() {
     }
 
     return () => observer.disconnect();
-  }, [menu]);
+  }, [menu, trackEvent]);
+
+  // IntersectionObserver for dish views
+  useEffect(() => {
+    if (!menu || menu.categories.length === 0) return;
+
+    const seen = new Set<string>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting && !seen.has(entry.target.id)) {
+            seen.add(entry.target.id);
+            const dishId = entry.target.id;
+            for (const cat of menu.categories) {
+              const dish = cat.dishes.find((d) => d.id === dishId);
+              if (dish) {
+                trackEvent("dish_view", {
+                  dish_id: dish.id,
+                  dish_name: dish.name,
+                });
+                break;
+              }
+            }
+          }
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    for (const cat of menu.categories) {
+      for (const dish of cat.dishes) {
+        const el = dishRefs.current[dish.id];
+        if (el) observer.observe(el);
+      }
+    }
+
+    return () => observer.disconnect();
+  }, [menu, trackEvent]);
+
+  // Scroll depth tracking
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (docHeight <= 0) return;
+      const depth = Math.min(scrollTop / docHeight, 1);
+      const rounded = Math.round(depth * 4) / 4; // 0, 0.25, 0.50, 0.75, 1.0
+      if (rounded > maxScrollDepthRef.current) {
+        maxScrollDepthRef.current = rounded;
+        trackEvent("scroll_depth", { depth: rounded });
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [trackEvent]);
 
   const scrollToCategory = useCallback(
     (categoryId: string) => {
@@ -220,6 +287,10 @@ export function PublicMenuPage() {
               {category.dishes.map((dish) => (
                 <div
                   key={dish.id}
+                  id={dish.id}
+                  ref={(el) => {
+                    dishRefs.current[dish.id] = el;
+                  }}
                   className="flex gap-3 rounded-lg border bg-card p-3"
                 >
                   <div className="flex-1 min-w-0">
