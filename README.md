@@ -32,13 +32,15 @@ Sistema para gestión de menú digital con:
 
 ## Arquitectura (Diagrama)
 
-Inserta aquí la imagen del diagrama de arquitectura del sistema:
+<p align="center">
+	<a href="./docs/Diagrama%20de%20Arquitectura%20de%20LiveMenu.png" target="_blank">
+		<img src="./docs/Diagrama%20de%20Arquitectura%20de%20LiveMenu.png" alt="Diagrama de Arquitectura de LiveMenu" width="920" />
+	</a>
+</p>
 
-```markdown
-![Diagrama de Arquitectura](./docs/architecture-diagram.png)
-```
-
-Si prefieres mantenerla en otra ruta, actualiza el path en el enlace anterior.
+<p align="center">
+	<a href="./docs/Diagrama%20de%20Arquitectura%20de%20LiveMenu.png" target="_blank"><strong>Ver diagrama en tamaño completo</strong></a>
+</p>
 
 ## Video del proyecto
 
