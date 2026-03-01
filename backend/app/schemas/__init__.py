@@ -1,6 +1,7 @@
 from .auth import RegisterRequest as RegisterRequest
 from .auth import LoginRequest as LoginRequest
 from .auth import TokenResponse as TokenResponse
+from .auth import LogoutResponse as LogoutResponse
 from .restaurant import RestaurantCreate as RestaurantCreate
 from .restaurant import RestaurantUpdate as RestaurantUpdate
 from .restaurant import RestaurantOut as RestaurantOut
@@ -14,3 +15,7 @@ from .dish import DishOut as DishOut
 from .dish import DishAvailabilityUpdate as DishAvailabilityUpdate
 from .upload import UploadImageResponse as UploadImageResponse
 from .upload import DeleteUploadResponse as DeleteUploadResponse
+from .menu import PublicMenuDish as PublicMenuDish
+from .menu import PublicMenuCategory as PublicMenuCategory
+from .menu import PublicMenuRestaurant as PublicMenuRestaurant
+from .menu import PublicMenuResponse as PublicMenuResponse

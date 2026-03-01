@@ -1,5 +1,6 @@
 from pathlib import Path
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -10,6 +11,8 @@ from app.handlers.restaurant_handler import router as restaurant_router
 from app.handlers.category_handler import router as category_router
 from app.handlers.dish_handler import router as dish_router
 from app.handlers.upload_handler import router as upload_router
+from app.handlers.menu_handler import router as menu_router
+from app.handlers.qr_handler import router as qr_router
 from app.services.image_worker_pool import image_worker_pool
 
 limiter = Limiter(key_func=get_remote_address)
@@ -18,11 +21,21 @@ app = FastAPI(title="LiveMenu API", version="1.0.0")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(auth_router)
 app.include_router(restaurant_router)
 app.include_router(category_router)
 app.include_router(dish_router)
 app.include_router(upload_router)
+app.include_router(menu_router)
+app.include_router(qr_router)
 
 Path(settings.UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")

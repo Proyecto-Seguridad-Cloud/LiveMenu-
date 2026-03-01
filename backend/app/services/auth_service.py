@@ -26,3 +26,11 @@ class AuthService:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email o Contraseña incorrectos")
 
         return create_access_token(user.id)
+
+    @staticmethod
+    def refresh(user_id) -> str:
+        return create_access_token(user_id)
+
+    @staticmethod
+    def logout() -> dict:
+        return {"message": "Sesión cerrada correctamente"}

@@ -30,19 +30,23 @@ async def create_category(payload: CategoryCreate, db: AsyncSession = Depends(ge
 
 @router.put("/{category_id}", response_model=CategoryOut)
 async def update_category(category_id: str = Path(...), payload: CategoryUpdate = None, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
-    category = await CategoryService.get(db, UUID(category_id))
-    if not category:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoría no encontrada")
-    data = payload.dict(exclude_none=True)
+    restaurant = await RestaurantService.get_by_owner(db, current_user.id)
+    if not restaurant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Restaurante no encontrado")
+
+    category = await CategoryService.get_owned(db, restaurant.id, UUID(category_id))
+    data = payload.model_dump(exclude_none=True)
     category = await CategoryService.update(db, category, data)
     return category
 
 
 @router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_category(category_id: str = Path(...), db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
-    category = await CategoryService.get(db, UUID(category_id))
-    if not category:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoría no encontrada")
+    restaurant = await RestaurantService.get_by_owner(db, current_user.id)
+    if not restaurant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Restaurante no encontrado")
+
+    category = await CategoryService.get_owned(db, restaurant.id, UUID(category_id))
     await CategoryService.delete(db, category)
     return None
 
