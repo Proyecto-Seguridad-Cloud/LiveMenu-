@@ -46,7 +46,7 @@ Sistema para gestión de menú digital con:
 
 Inserta aquí el enlace del video (demo, sustentación o walkthrough):
 
-- Link de video: `[VIdeo LiveMenu - Entrega 1](https://youtu.be/xrjC3klcJlo)`
+- Link de video: [Video LiveMenu - Entrega 1](https://youtu.be/xrjC3klcJlo) `[https://youtu.be/xrjC3klcJlo](https://youtu.be/xrjC3klcJlo))`
 
 ## Requisitos
 
