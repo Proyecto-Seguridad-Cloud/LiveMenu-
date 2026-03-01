@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { Loader2, Phone, MapPin, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { menuService } from "../../services/menu";
+import { analyticsService } from "../../services/analytics";
 import type { PublicMenuResponse } from "../../types/menu";
 import { cn, formatCurrency } from "@/lib/utils";
 
@@ -42,6 +43,13 @@ export function PublicMenuPage() {
       }
     }
     void loadMenu();
+  }, [slug]);
+
+  // Track scan event for analytics
+  useEffect(() => {
+    if (slug) {
+      analyticsService.recordScan(slug);
+    }
   }, [slug]);
 
   // IntersectionObserver for scroll tracking

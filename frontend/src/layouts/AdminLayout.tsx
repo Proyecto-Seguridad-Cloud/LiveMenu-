@@ -7,6 +7,7 @@ import {
   UtensilsCrossed,
   Image,
   QrCode,
+  BarChart3,
   LogOut,
   X,
   Menu,
@@ -25,6 +26,7 @@ const navItems = [
   { label: "Platos", href: "/admin/dishes", icon: UtensilsCrossed },
   { label: "Imágenes", href: "/admin/uploads", icon: Image },
   { label: "Código QR", href: "/admin/qr", icon: QrCode },
+  { label: "Analíticas", href: "/admin/analytics", icon: BarChart3 },
 ];
 
 function SidebarContent({
