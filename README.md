@@ -17,7 +17,7 @@ Sistema para gestión de menú digital con:
 
 ## Tabla de contenido
 
-1. [Arquitectura (Diagrama)](#arquitectura-diagrama)
+1. [Diagrama de Arquitectura](#arquitectura-diagrama)
 2. [Video del proyecto](#video-del-proyecto)
 3. [Requisitos](#requisitos)
 4. [Inicio rápido (Docker)](#inicio-rápido-docker)
@@ -125,6 +125,67 @@ VITE_API_BASE_URL=http://localhost:8000
 VITE_APP_NAME=LiveMenu
 ```
 
+### Qué hace cada variable de entorno
+
+#### Backend
+
+| Variable | Propósito | Ejemplo / Notas |
+|---|---|---|
+| `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_HOST`, `DB_PORT` | Conexión a PostgreSQL usada por SQLAlchemy/Alembic. | En Docker, `DB_HOST=livemenuDB`. |
+| `JWT_SECRET_KEY` | Clave para firmar/verificar tokens JWT. | Debe ser secreta y aleatoria. |
+| `JWT_ALGORITHM` | Algoritmo de firma JWT. | Valor actual recomendado: `HS256`. |
+| `JWT_EXPIRE_MINUTES` | Tiempo de expiración del token de acceso. | Controla duración de sesión. |
+| `ENVIRONMENT` | Contexto de ejecución de la app (`development`, `staging`, `production`). | Se añadió para estandarizar configuración por entorno y facilitar futuras reglas/ajustes según ambiente. |
+| `STORAGE_PROVIDER` | Motor de almacenamiento de imágenes. | `local` o `gcs`. |
+| `UPLOAD_DIR` | Carpeta local para archivos cuando `STORAGE_PROVIDER=local`. | Ej: `uploads`. |
+| `IMAGE_MAX_SIZE_MB` | Tamaño máximo permitido por imagen. | Protege contra uploads excesivos. |
+| `IMAGE_WORKERS` | Número de workers para procesamiento de imágenes. | Ajustable según recursos. |
+| `PUBLIC_BASE_URL` | URL pública base del backend para construir enlaces de recursos. | Ej: `http://localhost:8000`. |
+| `CORS_ORIGINS` | Orígenes permitidos por CORS (lista separada por comas). | Incluye hosts de frontend local. |
+| `MENU_CACHE_TTL_SECONDS` | TTL de caché de menú público. | Menor valor = datos más frescos. |
+| `GCS_BUCKET_NAME`, `GCS_PROJECT_ID`, `GCS_CREDENTIALS_FILE`, `GCS_PUBLIC_BASE_URL` | Configuración de Google Cloud Storage. | Se usan cuando `STORAGE_PROVIDER=gcs`. |
+
+#### Frontend
+
+| Variable | Propósito | Ejemplo / Notas |
+|---|---|---|
+| `VITE_API_BASE_URL` | Base URL de API para las llamadas del frontend. | Ej: `http://localhost:8000`. |
+| `VITE_APP_NAME` | Nombre mostrado por la aplicación (título, branding). | Ej: `LiveMenu`. |
+
+### Variables obligatorias vs opcionales
+
+#### Backend
+
+| Variable | Estado | Comentario |
+|---|---|---|
+| `DB_USER` | Obligatoria | Usuario de PostgreSQL. |
+| `DB_PASSWORD` | Obligatoria | Contraseña de PostgreSQL. |
+| `DB_NAME` | Obligatoria | Base de datos de la app. |
+| `DB_HOST` | Obligatoria | Host de DB (`livemenuDB` en Docker). |
+| `DB_PORT` | Obligatoria | Puerto de DB (normalmente `5432`). |
+| `JWT_SECRET_KEY` | Obligatoria | Clave de firma JWT; no dejar vacía en entornos reales. |
+| `JWT_ALGORITHM` | Obligatoria | Algoritmo JWT (`HS256`). |
+| `JWT_EXPIRE_MINUTES` | Opcional (recomendada) | Tiene default en backend (`60`). |
+| `ENVIRONMENT` | Opcional (recomendada) | Tiene default (`development`), útil para separar ambientes. |
+| `STORAGE_PROVIDER` | Obligatoria | Define `local` o `gcs`. |
+| `UPLOAD_DIR` | Obligatoria para `local` | Carpeta de subida en almacenamiento local. |
+| `IMAGE_MAX_SIZE_MB` | Opcional | Tiene default (`5`). |
+| `IMAGE_WORKERS` | Opcional | Tiene default (`2`). |
+| `PUBLIC_BASE_URL` | Opcional | Tiene default (`http://localhost:8000`). |
+| `CORS_ORIGINS` | Opcional (recomendada) | Tiene default, conviene ajustarla al entorno. |
+| `MENU_CACHE_TTL_SECONDS` | Opcional | Tiene default en backend (`60`). |
+| `GCS_BUCKET_NAME` | Obligatoria para `gcs` | Requerida si `STORAGE_PROVIDER=gcs`. |
+| `GCS_PROJECT_ID` | Obligatoria para `gcs` | Requerida si `STORAGE_PROVIDER=gcs`. |
+| `GCS_CREDENTIALS_FILE` | Obligatoria para `gcs` | Ruta del JSON de service account. |
+| `GCS_PUBLIC_BASE_URL` | Opcional para `gcs` | Tiene default (`https://storage.googleapis.com`). |
+
+#### Frontend
+
+| Variable | Estado | Comentario |
+|---|---|---|
+| `VITE_API_BASE_URL` | Obligatoria | Sin esta variable, el frontend no apunta correctamente a la API. |
+| `VITE_APP_NAME` | Opcional | Branding/título; puede tener fallback, pero se recomienda definirla. |
+
 ## Dockerización y servicios
 
 `docker-compose.yml` levanta:
@@ -230,6 +291,20 @@ npm run dev
 ```
 
 ## Pruebas backend
+
+### Validación rápida de configuración (`.env`, dependencias y contenedores)
+
+Antes o después de correr pruebas funcionales, puedes validar que la configuración base está sana:
+
+```powershell
+docker compose config
+docker compose exec backend pip check
+docker compose exec backend pytest -q
+```
+
+- `docker compose config`: valida sintaxis/interpolación del compose y variables.
+- `pip check`: detecta conflictos de dependencias instaladas en backend.
+- `pytest -q`: confirma que el comportamiento backend sigue correcto con la configuración actual.
 
 Ejecutar todo el suite:
 
