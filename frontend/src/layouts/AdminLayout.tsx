@@ -43,13 +43,13 @@ function SidebarContent({
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b px-4 py-4">
+    <div className="flex h-full flex-col bg-sidebar">
+      <div className="flex items-center justify-between border-b px-4 py-5">
         <div className="flex items-center gap-2">
-          <span className="flex size-7 items-center justify-center rounded-lg bg-orange-500 text-xs font-extrabold text-white">
+          <span className="flex size-8 items-center justify-center rounded-xl bg-primary text-sm font-extrabold text-white shadow-sm">
             L
           </span>
-          <h1 className="text-lg font-bold">LiveMenu</h1>
+          <h1 className="text-xl font-bold tracking-tight">LiveMenu</h1>
         </div>
         {onClose && (
           <Button
@@ -63,7 +63,7 @@ function SidebarContent({
         )}
       </div>
 
-      <nav className="flex-1 space-y-1 px-2 py-4">
+      <nav className="flex-1 space-y-2 px-3 py-4">
         {navItems.map((item) => (
           <NavLink
             key={item.href}
@@ -72,9 +72,9 @@ function SidebarContent({
             onClick={onClose}
             className={({ isActive }) =>
               cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-secondary text-primary"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               )
             }
@@ -86,12 +86,12 @@ function SidebarContent({
       </nav>
 
       {restaurantSlug && (
-        <div className="border-t px-2 py-2">
+        <div className="border-t px-3 py-3">
           <a
             href={`/m/${restaurantSlug}`}
             target="_blank"
             rel="noreferrer"
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           >
             <ExternalLink className="size-4" />
             Ver menú público
@@ -99,10 +99,10 @@ function SidebarContent({
         </div>
       )}
 
-      <div className="border-t px-2 py-4">
+      <div className="border-t px-3 py-4">
         <button
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
         >
           <LogOut className="size-4" />
           Cerrar sesión
@@ -134,9 +134,9 @@ export function AdminLayout() {
   }, [token]);
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop sidebar */}
-      <aside className="hidden w-60 shrink-0 border-r bg-card md:block">
+      <aside className="hidden w-64 shrink-0 border-r bg-sidebar md:block">
         <SidebarContent restaurantSlug={restaurantSlug} />
       </aside>
 
@@ -145,7 +145,7 @@ export function AdminLayout() {
         open={sidebarOpen}
         onOpenChange={(v) => !v && setSidebarOpen(false)}
       >
-        <SheetContent side="left" className="w-60 p-0">
+        <SheetContent side="left" className="w-[85vw] max-w-64 p-0" showCloseButton={false}>
           <SidebarContent
             onClose={() => setSidebarOpen(false)}
             restaurantSlug={restaurantSlug}
@@ -155,20 +155,20 @@ export function AdminLayout() {
 
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Topbar */}
-        <header className="flex h-14 items-center justify-between border-b bg-card px-4">
+        <header className="flex h-14 items-center justify-between border-b bg-card px-3 sm:h-16 sm:px-4 md:px-6">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setSidebarOpen(true)}
-            className="md:hidden"
+            className="size-10 md:hidden"
           >
             <Menu className="size-5" />
           </Button>
           <div className="hidden md:block" />
-          <p className="text-sm text-muted-foreground">Panel administrativo</p>
+          <p className="max-w-[70vw] truncate text-right text-sm font-medium text-muted-foreground">Panel administrativo</p>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
           <Outlet />
         </main>
       </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import { Link } from "react-router-dom";
 import {
   Store,
@@ -21,6 +21,35 @@ import { useAuth } from "../../context/AuthContext";
 import { restaurantService } from "../../services/restaurant";
 import { categoriesService } from "../../services/categories";
 import { dishesService } from "../../services/dishes";
+
+function StatTile({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+}: {
+  title: string;
+  value: string;
+  subtitle: string;
+  icon: ComponentType<{ className?: string }>;
+}) {
+  return (
+    <Card className="gap-3 py-4">
+      <CardHeader className="flex flex-row items-center justify-between px-4 pb-0">
+        <CardTitle className="text-sm font-medium text-muted-foreground">
+          {title}
+        </CardTitle>
+        <span className="inline-flex size-8 items-center justify-center rounded-xl bg-secondary text-primary">
+          <Icon className="size-4" />
+        </span>
+      </CardHeader>
+      <CardContent className="px-4 pb-1">
+        <p className="text-3xl font-bold leading-none tracking-tight">{value}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
+      </CardContent>
+    </Card>
+  );
+}
 
 export function AdminDashboardPage() {
   const { token } = useAuth();
@@ -68,10 +97,10 @@ export function AdminDashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-[22px] font-bold tracking-tight sm:text-[24px]">Dashboard</h1>
+        <p className="text-sm text-muted-foreground">
           Estado rápido de configuración del restaurante.
         </p>
       </div>
@@ -96,89 +125,103 @@ export function AdminDashboardPage() {
         </Card>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Restaurante
+          <Card className="gap-4 py-4">
+            <CardHeader className="flex flex-row items-center justify-between px-4 pb-0">
+              <div className="min-w-0">
+                <CardTitle className="truncate text-base font-semibold">
+                  {restaurantName}
                 </CardTitle>
-                <Store className="size-4 text-muted-foreground" />
+                <CardDescription className="mt-1 break-all text-xs">
+                  /{slug}
+                </CardDescription>
+              </div>
+              <span className="inline-flex size-10 items-center justify-center rounded-xl bg-secondary text-primary">
+                <Store className="size-5" />
+              </span>
+            </CardHeader>
+            <CardContent className="px-4 pb-1">
+              <a
+                href={`/m/${slug}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+              >
+                <ExternalLink className="size-4" />
+                Ver menú público
+              </a>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            <StatTile
+              title="Categorías"
+              value={String(categoryCount)}
+              subtitle="registradas"
+              icon={List}
+            />
+            <StatTile
+              title="Platos"
+              value={String(dishCount)}
+              subtitle="en el menú"
+              icon={UtensilsCrossed}
+            />
+            <Card className="gap-3 py-4">
+              <CardHeader className="flex flex-row items-center justify-between px-4 pb-0">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Menú
+                </CardTitle>
+                <span className="inline-flex size-8 items-center justify-center rounded-xl bg-secondary text-primary">
+                  <ExternalLink className="size-4" />
+                </span>
               </CardHeader>
-              <CardContent>
-                <div className="text-lg font-bold">{restaurantName}</div>
-                <p className="text-xs text-muted-foreground">/{slug}</p>
+              <CardContent className="px-4 pb-1">
+                <Badge variant="secondary" className="mb-1">
+                  Activo
+                </Badge>
+                <p className="truncate text-xs text-muted-foreground">/m/{slug}</p>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Categorías
+            <Card className="gap-3 py-4">
+              <CardHeader className="flex flex-row items-center justify-between px-4 pb-0">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Estado
                 </CardTitle>
-                <List className="size-4 text-muted-foreground" />
+                <span className="inline-flex size-8 items-center justify-center rounded-xl bg-secondary text-primary">
+                  <QrCode className="size-4" />
+                </span>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{categoryCount}</div>
-                <p className="text-xs text-muted-foreground">registradas</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Platos</CardTitle>
-                <UtensilsCrossed className="size-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{dishCount}</div>
-                <p className="text-xs text-muted-foreground">en el menú</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Menú público
-                </CardTitle>
-                <ExternalLink className="size-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <Badge variant="secondary">Activo</Badge>
-                <a
-                  href={`/m/${slug}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-1 block text-xs text-orange-600 hover:underline"
-                >
-                  /m/{slug}
-                </a>
+              <CardContent className="px-4 pb-1">
+                <p className="text-lg font-bold leading-none">Listo</p>
+                <p className="mt-1 text-xs text-muted-foreground">panel operativo</p>
               </CardContent>
             </Card>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Acciones rápidas</CardTitle>
+              <CardTitle className="text-[20px] font-semibold">Acciones rápidas</CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
-              <Button variant="outline" asChild>
+            <CardContent className="grid gap-2 sm:flex sm:flex-wrap">
+              <Button variant="outline" className="w-full sm:w-auto" asChild>
                 <Link to="/admin/restaurant">
                   <Store className="mr-2 size-4" />
                   Restaurante
                 </Link>
               </Button>
-              <Button variant="outline" asChild>
+              <Button variant="outline" className="w-full sm:w-auto" asChild>
                 <Link to="/admin/categories">
                   <List className="mr-2 size-4" />
                   Categorías
                 </Link>
               </Button>
-              <Button asChild>
+              <Button className="w-full sm:w-auto" asChild>
                 <Link to="/admin/dishes/new">
                   <UtensilsCrossed className="mr-2 size-4" />
                   Nuevo plato
                 </Link>
               </Button>
-              <Button variant="outline" asChild>
+              <Button variant="outline" className="w-full sm:w-auto" asChild>
                 <Link to="/admin/qr">
                   <QrCode className="mr-2 size-4" />
                   Código QR

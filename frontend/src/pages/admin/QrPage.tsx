@@ -92,10 +92,10 @@ export function QrPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Mi Código QR</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-[22px] font-bold tracking-tight sm:text-[24px]">Mi Código QR</h1>
+        <p className="text-sm text-muted-foreground">
           Descarga e imprime el QR para que tus clientes accedan al menú.
         </p>
       </div>
@@ -104,10 +104,10 @@ export function QrPage() {
         {/* QR Preview */}
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-10">
-            <div ref={qrRef} className="rounded-xl border bg-white p-6">
+            <div ref={qrRef} className="rounded-2xl border bg-white p-4 shadow-sm sm:p-6">
               <QRCodeCanvas
                 value={menuUrl}
-                size={220}
+                size={200}
                 level="H"
                 includeMargin={false}
               />
@@ -121,10 +121,10 @@ export function QrPage() {
         {/* Actions */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Opciones</CardTitle>
+            <CardTitle className="text-[20px] font-semibold">Opciones</CardTitle>
             <CardDescription>
               URL del menú:{" "}
-              <code className="text-xs break-all">{menuUrl}</code>
+              <code className="break-all text-xs">{menuUrl}</code>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
