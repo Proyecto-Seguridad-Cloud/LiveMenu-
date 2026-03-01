@@ -1,6 +1,5 @@
-import { lazy, Suspense, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { Loader2 } from 'lucide-react'
 import { useAuth } from './context/AuthContext'
 import { AdminLayout } from './layouts/AdminLayout'
 import { LoginPage } from './pages/auth/LoginPage'
@@ -34,28 +33,27 @@ function RedirectIfAuth({ children }: { children: ReactNode }) {
 
 function App() {
   return (
-    <Suspense fallback={<AppLoading />}>
-      <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
+    <Routes>
+      <Route path="/" element={<Navigate to="/login" replace />} />
 
-        <Route
-          path="/login"
-          element={
-            <RedirectIfAuth>
-              <LoginPage />
-            </RedirectIfAuth>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <RedirectIfAuth>
-              <RegisterPage />
-            </RedirectIfAuth>
-          }
-        />
+      <Route
+        path="/login"
+        element={
+          <RedirectIfAuth>
+            <LoginPage />
+          </RedirectIfAuth>
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <RedirectIfAuth>
+            <RegisterPage />
+          </RedirectIfAuth>
+        }
+      />
 
-        <Route path="/m/:slug" element={<PublicMenuPage />} />
+      <Route path="/m/:slug" element={<PublicMenuPage />} />
 
       <Route
         path="/admin"
@@ -76,9 +74,8 @@ function App() {
         <Route path="analytics" element={<AnalyticsPage />} />
       </Route>
 
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-    </Suspense>
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
   )
 }
 

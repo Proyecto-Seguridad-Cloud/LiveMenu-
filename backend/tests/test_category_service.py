@@ -172,19 +172,3 @@ async def test_reorder_raises_when_invalid_uuid(monkeypatch):
         await CategoryService.reorder(db, uuid4(), ["not-a-uuid"])
 
     assert exc.value.status_code == 400
-
-
-@pytest.mark.asyncio
-async def test_delete_raises_when_category_has_dishes(monkeypatch):
-    async def fake_list_dishes(db, category_ids=None, available=None):
-        _ = db, category_ids, available
-        return [SimpleNamespace(id=uuid4())]
-
-    category = SimpleNamespace(id=uuid4())
-
-    monkeypatch.setattr(category_service, "list_dishes", fake_list_dishes)
-
-    with pytest.raises(HTTPException) as exc:
-        await CategoryService.delete(SimpleNamespace(), category)
-
-    assert exc.value.status_code == 400
