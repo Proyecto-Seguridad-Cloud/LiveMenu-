@@ -1,82 +1,91 @@
-import type { FormEvent } from 'react'
-import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
-import { restaurantService } from '../../services/restaurant'
-import { ApiError } from '../../services/http'
-import type { RestaurantPayload } from '../../types/restaurant'
+import type { FormEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { ExternalLink, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "../../context/AuthContext";
+import { restaurantService } from "../../services/restaurant";
+import { ApiError } from "../../services/http";
+import type { RestaurantPayload } from "../../types/restaurant";
 
 export function RestaurantPage() {
-  const { token } = useAuth()
+  const { token } = useAuth();
 
-  const [restaurantId, setRestaurantId] = useState<string | null>(null)
-  const [slug, setSlug] = useState('')
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [logoUrl, setLogoUrl] = useState('')
-  const [phone, setPhone] = useState('')
-  const [address, setAddress] = useState('')
-  const [hoursRaw, setHoursRaw] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [errorMessage, setErrorMessage] = useState('')
-  const [successMessage, setSuccessMessage] = useState('')
+  const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [slug, setSlug] = useState("");
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [hoursRaw, setHoursRaw] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const hasRestaurant = useMemo(() => Boolean(restaurantId), [restaurantId])
+  const hasRestaurant = useMemo(() => Boolean(restaurantId), [restaurantId]);
 
   useEffect(() => {
     async function loadRestaurant() {
       if (!token) {
-        setLoading(false)
-        return
+        setLoading(false);
+        return;
       }
-
-      setErrorMessage('')
-      setSuccessMessage('')
-
       try {
-        const restaurant = await restaurantService.getCurrent(token)
-        setRestaurantId(restaurant.id)
-        setSlug(restaurant.slug)
-        setName(restaurant.name)
-        setDescription(restaurant.description || '')
-        setLogoUrl(restaurant.logo_url || '')
-        setPhone(restaurant.phone || '')
-        setAddress(restaurant.address || '')
-        setHoursRaw(restaurant.hours ? JSON.stringify(restaurant.hours, null, 2) : '')
+        const restaurant = await restaurantService.getCurrent(token);
+        setRestaurantId(restaurant.id);
+        setSlug(restaurant.slug);
+        setName(restaurant.name);
+        setDescription(restaurant.description || "");
+        setLogoUrl(restaurant.logo_url || "");
+        setPhone(restaurant.phone || "");
+        setAddress(restaurant.address || "");
+        setHoursRaw(
+          restaurant.hours ? JSON.stringify(restaurant.hours, null, 2) : ""
+        );
       } catch (error) {
         if (error instanceof ApiError && error.status === 404) {
-          setRestaurantId(null)
-          setSlug('')
-          return
+          setRestaurantId(null);
+          setSlug("");
+        } else {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "No fue posible cargar restaurante"
+          );
         }
-        const message = error instanceof Error ? error.message : 'No fue posible cargar restaurante'
-        setErrorMessage(message)
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
-
-    void loadRestaurant()
-  }, [token])
+    void loadRestaurant();
+  }, [token]);
 
   function buildPayload(): RestaurantPayload | null {
     if (!name.trim()) {
-      setErrorMessage('El nombre del restaurante es obligatorio')
-      return null
+      toast.error("El nombre del restaurante es obligatorio");
+      return null;
     }
-
-    let parsedHours: Record<string, unknown> | null = null
+    let parsedHours: Record<string, unknown> | null = null;
     if (hoursRaw.trim()) {
       try {
-        const parsed = JSON.parse(hoursRaw)
-        parsedHours = typeof parsed === 'object' && parsed !== null ? parsed : null
+        const parsed = JSON.parse(hoursRaw);
+        parsedHours =
+          typeof parsed === "object" && parsed !== null ? parsed : null;
       } catch {
-        setErrorMessage('Horarios debe ser un JSON válido')
-        return null
+        toast.error("Horarios debe ser un JSON válido");
+        return null;
       }
     }
-
     return {
       name: name.trim(),
       description: description.trim() || null,
@@ -84,130 +93,161 @@ export function RestaurantPage() {
       phone: phone.trim() || null,
       address: address.trim() || null,
       hours: parsedHours,
-    }
+    };
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!token) {
-      return
-    }
+    event.preventDefault();
+    if (!token) return;
 
-    setErrorMessage('')
-    setSuccessMessage('')
-
-    const payload = buildPayload()
-    if (!payload) {
-      return
-    }
+    const payload = buildPayload();
+    if (!payload) return;
 
     try {
-      setSaving(true)
+      setSaving(true);
       const response = hasRestaurant
         ? await restaurantService.update(token, payload)
-        : await restaurantService.create(token, payload)
+        : await restaurantService.create(token, payload);
 
-      setRestaurantId(response.id)
-      setSlug(response.slug)
-      setSuccessMessage(hasRestaurant ? 'Restaurante actualizado correctamente' : 'Restaurante creado correctamente')
+      setRestaurantId(response.id);
+      setSlug(response.slug);
+      toast.success(
+        hasRestaurant
+          ? "Restaurante actualizado correctamente"
+          : "Restaurante creado correctamente"
+      );
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'No fue posible guardar restaurante'
-      setErrorMessage(message)
+      toast.error(
+        error instanceof Error ? error.message : "Error al guardar restaurante"
+      );
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
   if (loading) {
     return (
-      <section className="content-grid">
-        <article className="card">
-          <h1 className="title">Mi Restaurante</h1>
-          <p className="muted">Cargando información...</p>
-        </article>
-      </section>
-    )
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   return (
-    <section className="content-grid">
-      <article className="card">
-        <h1 className="title">Mi Restaurante</h1>
-        <p className="muted">Datos principales, logo, contacto, slug y horarios.</p>
-      </article>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Mi Restaurante</h1>
+        <p className="text-muted-foreground">
+          Datos principales, logo, contacto y horarios.
+        </p>
+      </div>
 
-      <article className="card">
-        {!hasRestaurant && (
-          <p className="muted" style={{ marginBottom: 12 }}>
-            Aún no tienes restaurante configurado. Completa este formulario para crearlo.
-          </p>
-        )}
+      {!hasRestaurant && (
+        <Card>
+          <CardContent className="py-6">
+            <p className="text-muted-foreground">
+              Aún no tienes restaurante configurado. Completa el formulario para
+              crearlo.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
-        <form onSubmit={handleSubmit}>
-          <div className="field">
-            <label htmlFor="name">Nombre</label>
-            <input id="name" placeholder="La Parrilla del Chef" value={name} onChange={(event) => setName(event.target.value)} />
-          </div>
-
-          <div className="field">
-            <label htmlFor="description">Descripción</label>
-            <textarea
-              id="description"
-              rows={4}
-              placeholder="Especialistas en cortes y brasas."
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-            />
-          </div>
-
-          <div className="field">
-            <label htmlFor="logo">Logo URL</label>
-            <input id="logo" placeholder="https://..." value={logoUrl} onChange={(event) => setLogoUrl(event.target.value)} />
-          </div>
-
-          <div className="field">
-            <label htmlFor="phone">Teléfono</label>
-            <input id="phone" placeholder="+57 300 000 0000" value={phone} onChange={(event) => setPhone(event.target.value)} />
-          </div>
-
-          <div className="field">
-            <label htmlFor="address">Dirección</label>
-            <input id="address" placeholder="Calle 123 #45-67" value={address} onChange={(event) => setAddress(event.target.value)} />
-          </div>
-
-          <div className="field">
-            <label htmlFor="hours">Horarios (JSON opcional)</label>
-            <textarea
-              id="hours"
-              rows={4}
-              placeholder='{"lunes":"8:00-18:00"}'
-              value={hoursRaw}
-              onChange={(event) => setHoursRaw(event.target.value)}
-            />
-          </div>
-
-          {hasRestaurant && (
-            <div className="field">
-              <label htmlFor="slug">Slug (solo lectura)</label>
-              <input id="slug" readOnly value={slug} />
-            </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">
+            {hasRestaurant ? "Editar información" : "Crear restaurante"}
+          </CardTitle>
+          {hasRestaurant && slug && (
+            <CardDescription className="flex items-center gap-2">
+              Slug: <code className="text-xs">{slug}</code>
+              <a
+                href={`/m/${slug}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-orange-600 hover:underline"
+              >
+                <ExternalLink className="size-3" />
+                Ver menú
+              </a>
+            </CardDescription>
           )}
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nombre</Label>
+              <Input
+                id="name"
+                placeholder="La Parrilla del Chef"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
 
-          {errorMessage && <p className="error-message">{errorMessage}</p>}
-          {successMessage && <p className="success-message">{successMessage}</p>}
+            <div className="space-y-2">
+              <Label htmlFor="description">Descripción</Label>
+              <Textarea
+                id="description"
+                rows={3}
+                placeholder="Especialistas en cortes y brasas."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
 
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button className="btn btn-primary" type="submit" disabled={saving}>
-              {saving ? 'Guardando...' : hasRestaurant ? 'Guardar cambios' : 'Crear restaurante'}
-            </button>
-            {slug && (
-              <Link className="btn btn-ghost" to={`/m/${slug}`} target="_blank" rel="noreferrer">
-                Ver menú público
-              </Link>
-            )}
-          </div>
-        </form>
-      </article>
-    </section>
-  )
+            <div className="space-y-2">
+              <Label htmlFor="logo">Logo URL</Label>
+              <Input
+                id="logo"
+                placeholder="https://..."
+                value={logoUrl}
+                onChange={(e) => setLogoUrl(e.target.value)}
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Teléfono</Label>
+                <Input
+                  id="phone"
+                  placeholder="+57 300 000 0000"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="address">Dirección</Label>
+                <Input
+                  id="address"
+                  placeholder="Calle 123 #45-67"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="hours">Horarios (JSON opcional)</Label>
+              <Textarea
+                id="hours"
+                rows={4}
+                placeholder='{"lunes":"8:00-18:00"}'
+                value={hoursRaw}
+                onChange={(e) => setHoursRaw(e.target.value)}
+              />
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button type="submit" disabled={saving}>
+                {saving && <Loader2 className="mr-2 size-4 animate-spin" />}
+                {hasRestaurant ? "Guardar cambios" : "Crear restaurante"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
