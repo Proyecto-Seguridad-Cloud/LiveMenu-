@@ -1,130 +1,157 @@
-import type { FormEvent } from 'react'
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Link } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
-import { authService } from '../../services/auth'
+import type { FormEvent } from "react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "../../context/AuthContext";
+import { authService } from "../../services/auth";
 
 export function RegisterPage() {
-  const navigate = useNavigate()
-  const { login } = useAuth()
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const [fullName, setFullName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [errorMessage, setErrorMessage] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setErrorMessage('')
+    event.preventDefault();
 
-    if (!fullName.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
-      setErrorMessage('Todos los campos son obligatorios')
-      return
+    if (
+      !fullName.trim() ||
+      !email.trim() ||
+      !password.trim() ||
+      !confirmPassword.trim()
+    ) {
+      toast.error("Todos los campos son obligatorios");
+      return;
     }
-
     if (password.length < 8) {
-      setErrorMessage('La contraseña debe tener al menos 8 caracteres')
-      return
+      toast.error("La contraseña debe tener al menos 8 caracteres");
+      return;
     }
-
     if (password !== confirmPassword) {
-      setErrorMessage('Las contraseñas no coinciden')
-      return
+      toast.error("Las contraseñas no coinciden");
+      return;
     }
 
     try {
-      setIsSubmitting(true)
-
+      setIsSubmitting(true);
       await authService.register({
         email: email.trim(),
         full_name: fullName.trim(),
         password,
-      })
+      });
 
       const loginResponse = await authService.login({
         email: email.trim(),
         password,
-      })
-
-      login(loginResponse.access_token)
-      navigate('/admin', { replace: true })
+      });
+      login(loginResponse.access_token);
+      navigate("/admin", { replace: true });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'No fue posible crear la cuenta'
-      setErrorMessage(message)
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "No fue posible crear la cuenta"
+      );
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
   }
 
   return (
-    <div className="page-wrap">
-      <section className="card auth-card">
-        <h1 className="auth-title">Crear cuenta</h1>
-        <p className="auth-subtitle">Configura tu acceso al panel de administración.</p>
-
-        <form onSubmit={handleSubmit}>
-          <div className="field">
-            <label htmlFor="fullName">Nombre completo</label>
-            <input
-              id="fullName"
-              type="text"
-              placeholder="Nombre del administrador"
-              value={fullName}
-              onChange={(event) => setFullName(event.target.value)}
-              autoComplete="name"
-            />
+    <div className="grid min-h-screen place-items-center p-6">
+      <Card className="w-full max-w-[420px]">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-2 flex size-10 items-center justify-center rounded-lg bg-orange-500 text-lg font-extrabold text-white">
+            L
           </div>
+          <CardTitle className="text-2xl">Crear cuenta</CardTitle>
+          <CardDescription>
+            Configura tu acceso al panel de administración.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Nombre completo</Label>
+              <Input
+                id="fullName"
+                placeholder="Nombre del administrador"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                autoComplete="name"
+              />
+            </div>
 
-          <div className="field">
-            <label htmlFor="email">Correo electrónico</label>
-            <input
-              id="email"
-              type="email"
-              placeholder="nombre@ejemplo.com"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              autoComplete="email"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Correo electrónico</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="nombre@ejemplo.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+              />
+            </div>
 
-          <div className="field">
-            <label htmlFor="password">Contraseña</label>
-            <input
-              id="password"
-              type="password"
-              placeholder="Mínimo 8 caracteres"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="new-password"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Contraseña</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Mínimo 8 caracteres"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+              />
+            </div>
 
-          <div className="field">
-            <label htmlFor="confirm">Confirmar contraseña</label>
-            <input
-              id="confirm"
-              type="password"
-              placeholder="Repite la contraseña"
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              autoComplete="new-password"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm">Confirmar contraseña</Label>
+              <Input
+                id="confirm"
+                type="password"
+                placeholder="Repite la contraseña"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
+              />
+            </div>
 
-          {errorMessage && <p className="error-message">{errorMessage}</p>}
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting && (
+                <Loader2 className="mr-2 size-4 animate-spin" />
+              )}
+              Registrarse
+            </Button>
+          </form>
 
-          <button className="btn btn-primary" style={{ width: '100%', marginTop: 8 }} type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Registrando...' : 'Registrarse'}
-          </button>
-        </form>
-
-        <p className="muted" style={{ marginTop: 12 }}>
-          ¿Ya tienes cuenta? <Link to="/login" style={{ color: 'var(--lm-orange-600)', fontWeight: 700 }}>Inicia sesión</Link>
-        </p>
-      </section>
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            ¿Ya tienes cuenta?{" "}
+            <Link
+              to="/login"
+              className="font-semibold text-orange-600 hover:underline"
+            >
+              Inicia sesión
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
     </div>
-  )
+  );
 }

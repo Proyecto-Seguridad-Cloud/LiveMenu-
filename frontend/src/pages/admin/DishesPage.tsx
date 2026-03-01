@@ -1,262 +1,340 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
-import { categoriesService } from '../../services/categories'
-import { dishesService } from '../../services/dishes'
-import { ApiError } from '../../services/http'
-import type { Category } from '../../types/category'
-import type { Dish } from '../../types/dish'
-
-function formatMoney(value: number | string | null | undefined): string {
-  if (value === null || value === undefined || value === '') {
-    return '-'
-  }
-
-  const parsed = Number(value)
-  if (Number.isNaN(parsed)) {
-    return '$0.00'
-  }
-
-  return `$${parsed.toFixed(2)}`
-}
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  Loader2,
+  Plus,
+  Pencil,
+  Trash2,
+  Search,
+} from "lucide-react";
+import { toast } from "sonner";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useAuth } from "../../context/AuthContext";
+import { categoriesService } from "../../services/categories";
+import { dishesService } from "../../services/dishes";
+import { ApiError } from "../../services/http";
+import type { Category } from "../../types/category";
+import type { Dish } from "../../types/dish";
+import { formatCurrency } from "@/lib/utils";
 
 export function DishesPage() {
-  const { token } = useAuth()
+  const { token } = useAuth();
 
-  const [categories, setCategories] = useState<Category[]>([])
-  const [dishes, setDishes] = useState<Dish[]>([])
-  const [searchText, setSearchText] = useState('')
-  const [selectedCategoryId, setSelectedCategoryId] = useState('all')
-  const [availabilityFilter, setAvailabilityFilter] = useState<'all' | 'true' | 'false'>('all')
-  const [loading, setLoading] = useState(true)
-  const [errorMessage, setErrorMessage] = useState('')
-  const [successMessage, setSuccessMessage] = useState('')
-  const [restaurantMissing, setRestaurantMissing] = useState(false)
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [dishes, setDishes] = useState<Dish[]>([]);
+  const [searchText, setSearchText] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState("all");
+  const [availabilityFilter, setAvailabilityFilter] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [restaurantMissing, setRestaurantMissing] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadInitialData() {
+    async function loadData() {
       if (!token) {
-        setLoading(false)
-        return
+        setLoading(false);
+        return;
       }
-
-      setErrorMessage('')
-      setRestaurantMissing(false)
-
       try {
-        const [categoriesResponse, dishesResponse] = await Promise.all([
+        const [cats, allDishes] = await Promise.all([
           categoriesService.list(token),
           dishesService.list(token),
-        ])
-        setCategories(categoriesResponse)
-        setDishes(dishesResponse)
+        ]);
+        setCategories(cats);
+        setDishes(allDishes);
       } catch (error) {
         if (error instanceof ApiError && error.status === 404) {
-          setRestaurantMissing(true)
+          setRestaurantMissing(true);
         } else {
-          const message = error instanceof Error ? error.message : 'No fue posible cargar platos'
-          setErrorMessage(message)
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "No fue posible cargar platos"
+          );
         }
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
+    void loadData();
+  }, [token]);
 
-    void loadInitialData()
-  }, [token])
-
-  const dishesWithCategory = useMemo(() => {
-    const categoryMap = new Map(categories.map((entry) => [entry.id, entry.name]))
-
-    return dishes.map((dish) => ({
-      ...dish,
-      categoryName: categoryMap.get(dish.category_id) || 'Sin categoría',
-    }))
-  }, [categories, dishes])
+  const categoryMap = useMemo(
+    () => new Map(categories.map((c) => [c.id, c.name])),
+    [categories]
+  );
 
   const filteredDishes = useMemo(() => {
-    return dishesWithCategory.filter((dish) => {
-      if (selectedCategoryId !== 'all' && dish.category_id !== selectedCategoryId) {
-        return false
+    return dishes.filter((dish) => {
+      if (selectedCategoryId !== "all" && dish.category_id !== selectedCategoryId)
+        return false;
+      if (availabilityFilter === "true" && !dish.available) return false;
+      if (availabilityFilter === "false" && dish.available) return false;
+      if (searchText.trim()) {
+        return dish.name.toLowerCase().includes(searchText.trim().toLowerCase());
       }
-
-      if (availabilityFilter === 'true' && !dish.available) {
-        return false
-      }
-
-      if (availabilityFilter === 'false' && dish.available) {
-        return false
-      }
-
-      if (!searchText.trim()) {
-        return true
-      }
-
-      const needle = searchText.trim().toLowerCase()
-      return dish.name.toLowerCase().includes(needle)
-    })
-  }, [availabilityFilter, dishesWithCategory, searchText, selectedCategoryId])
+      return true;
+    });
+  }, [dishes, selectedCategoryId, availabilityFilter, searchText]);
 
   async function toggleAvailability(dish: Dish) {
-    if (!token) {
-      return
-    }
-
-    setErrorMessage('')
-    setSuccessMessage('')
-
+    if (!token) return;
     try {
-      const updated = await dishesService.updateAvailability(token, dish.id, !dish.available)
-      setDishes((prev) => prev.map((entry) => (entry.id === updated.id ? updated : entry)))
-      setSuccessMessage('Disponibilidad actualizada')
+      const updated = await dishesService.updateAvailability(
+        token,
+        dish.id,
+        !dish.available
+      );
+      setDishes((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
+      toast.success(
+        updated.available ? "Plato marcado disponible" : "Plato marcado no disponible"
+      );
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'No fue posible actualizar disponibilidad'
-      setErrorMessage(message)
+      toast.error(
+        error instanceof Error ? error.message : "Error al actualizar"
+      );
     }
   }
 
-  async function removeDish(dishId: string) {
-    if (!token) {
-      return
-    }
-
-    const confirmed = window.confirm('¿Seguro que deseas eliminar este plato?')
-    if (!confirmed) {
-      return
-    }
-
-    setErrorMessage('')
-    setSuccessMessage('')
-
+  async function handleConfirmDelete() {
+    if (!token || !deleteId) return;
     try {
-      await dishesService.remove(token, dishId)
-      setDishes((prev) => prev.filter((entry) => entry.id !== dishId))
-      setSuccessMessage('Plato eliminado correctamente')
+      await dishesService.remove(token, deleteId);
+      setDishes((prev) => prev.filter((d) => d.id !== deleteId));
+      toast.success("Plato eliminado");
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'No fue posible eliminar plato'
-      setErrorMessage(message)
+      toast.error(
+        error instanceof Error ? error.message : "Error al eliminar plato"
+      );
+    } finally {
+      setDeleteId(null);
     }
   }
 
   if (loading) {
     return (
-      <section className="content-grid">
-        <article className="card">
-          <h1 className="title">Gestión de Platos</h1>
-          <p className="muted">Cargando platos...</p>
-        </article>
-      </section>
-    )
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   if (restaurantMissing) {
     return (
-      <section className="content-grid">
-        <article className="card">
-          <h1 className="title">Gestión de Platos</h1>
-          <p className="muted">Primero debes crear tu restaurante y categorías para gestionar platos.</p>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <Link className="btn btn-primary" to="/admin/restaurant">
-              Ir a Mi Restaurante
-            </Link>
-            <Link className="btn btn-ghost" to="/admin/categories">
-              Ir a Categorías
-            </Link>
-          </div>
-        </article>
-      </section>
-    )
+      <Card>
+        <CardHeader>
+          <CardTitle>Gestión de Platos</CardTitle>
+          <CardDescription>
+            Primero debes crear tu restaurante y categorías.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <Button asChild>
+            <Link to="/admin/restaurant">Ir a Mi Restaurante</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to="/admin/categories">Ir a Categorías</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <section className="content-grid">
-      <article className="card">
-        <h1 className="title">Gestión de Platos</h1>
-        <p className="muted">Listado, filtros y cambios rápidos de disponibilidad.</p>
-      </article>
-
-      <article className="card">
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
-          <input
-            style={{ flex: 1, minWidth: 220 }}
-            placeholder="Buscar plato..."
-            value={searchText}
-            onChange={(event) => setSearchText(event.target.value)}
-          />
-
-          <select value={selectedCategoryId} onChange={(event) => setSelectedCategoryId(event.target.value)}>
-            <option value="all">Todas categorías</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-
-          <select value={availabilityFilter} onChange={(event) => setAvailabilityFilter(event.target.value as 'all' | 'true' | 'false')}>
-            <option value="all">Todos</option>
-            <option value="true">Disponibles</option>
-            <option value="false">No disponibles</option>
-          </select>
-
-          <Link to="/admin/dishes/new" className="btn btn-primary">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Platos</h1>
+          <p className="text-muted-foreground">
+            Gestiona los platos de tu menú.
+          </p>
+        </div>
+        <Button asChild>
+          <Link to="/admin/dishes/new">
+            <Plus className="mr-2 size-4" />
             Nuevo plato
           </Link>
-        </div>
+        </Button>
+      </div>
 
-        {errorMessage && <p className="error-message">{errorMessage}</p>}
-        {successMessage && <p className="success-message">{successMessage}</p>}
-
-        <div style={{ display: 'grid', gap: 10, marginTop: 10 }}>
-          {filteredDishes.map((dish) => (
-            <div
-              key={dish.id}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: 10,
-                padding: 10,
-                border: '1px solid var(--lm-slate-200)',
-                borderRadius: 10,
-                flexWrap: 'wrap',
-              }}
+      {/* Filters */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar plato..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Select
+              value={selectedCategoryId}
+              onValueChange={setSelectedCategoryId}
             >
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                {dish.image_url && (
-                  <img
-                    src={dish.image_url}
-                    alt={dish.name}
-                    style={{ width: 64, height: 64, borderRadius: 10, objectFit: 'cover', border: '1px solid var(--lm-slate-200)' }}
-                  />
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Categoría" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas las categorías</SelectItem>
+                {categories.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={availabilityFilter}
+              onValueChange={setAvailabilityFilter}
+            >
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Disponibilidad" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="true">Disponibles</SelectItem>
+                <SelectItem value="false">No disponibles</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Dish Grid */}
+      {filteredDishes.length === 0 ? (
+        <Card>
+          <CardContent className="py-10 text-center text-muted-foreground">
+            No hay platos para los filtros seleccionados.
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredDishes.map((dish) => (
+            <Card key={dish.id} className="overflow-hidden">
+              {dish.image_url && (
+                <img
+                  src={dish.image_url}
+                  alt={dish.name}
+                  className="h-40 w-full object-cover"
+                />
+              )}
+              <CardContent className="pt-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold truncate">{dish.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {categoryMap.get(dish.category_id) || "Sin categoría"}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    {dish.price_offer ? (
+                      <>
+                        <p className="text-sm line-through text-muted-foreground">
+                          {formatCurrency(Number(dish.price))}
+                        </p>
+                        <p className="font-bold text-orange-600">
+                          {formatCurrency(Number(dish.price_offer))}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="font-bold">
+                        {formatCurrency(Number(dish.price))}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {dish.tags.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {dish.tags.map((tag) => (
+                      <Badge key={tag} variant="secondary" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
                 )}
 
-                <div>
-                <strong>{dish.name}</strong>
-                <p className="muted">
-                  {formatMoney(dish.price)} · {dish.categoryName}
-                </p>
-                {dish.price_offer !== null && <p className="muted">Oferta: {formatMoney(dish.price_offer)}</p>}
+                <div className="mt-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={dish.available}
+                      onCheckedChange={() => toggleAvailability(dish)}
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {dish.available ? "Disponible" : "No disponible"}
+                    </span>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" asChild>
+                      <Link to={`/admin/dishes/${dish.id}/edit`}>
+                        <Pencil className="size-4" />
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setDeleteId(dish.id)}
+                    >
+                      <Trash2 className="size-4 text-destructive" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <button className="btn btn-ghost" type="button" onClick={() => toggleAvailability(dish)}>
-                  {dish.available ? 'Marcar no disponible' : 'Marcar disponible'}
-                </button>
-                <Link className="btn btn-ghost" to={`/admin/dishes/${dish.id}/edit`}>
-                  Editar
-                </Link>
-                <button className="btn btn-ghost" type="button" onClick={() => removeDish(dish.id)}>
-                  Eliminar
-                </button>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
+      )}
 
-        {filteredDishes.length === 0 && <p className="muted">No hay platos para los filtros seleccionados.</p>}
-      </article>
-    </section>
-  )
+      {/* Delete Confirmation */}
+      <AlertDialog
+        open={deleteId !== null}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar plato?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete}>
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
 }

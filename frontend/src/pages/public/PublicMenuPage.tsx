@@ -1,178 +1,278 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { menuService } from '../../services/menu'
-import type { PublicMenuCategory, PublicMenuResponse } from '../../types/menu'
-
-function formatMoney(value: number | string | null | undefined): string {
-  if (value === null || value === undefined || value === '') {
-    return '-'
-  }
-
-  const parsed = Number(value)
-  if (Number.isNaN(parsed)) {
-    return '$0.00'
-  }
-
-  return `$${parsed.toFixed(2)}`
-}
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
+import { Loader2, Phone, MapPin, Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { menuService } from "../../services/menu";
+import type { PublicMenuResponse } from "../../types/menu";
+import { cn, formatCurrency } from "@/lib/utils";
 
 export function PublicMenuPage() {
-  const { slug } = useParams()
+  const { slug } = useParams();
 
-  const [menu, setMenu] = useState<PublicMenuResponse | null>(null)
-  const [activeCategoryId, setActiveCategoryId] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [errorMessage, setErrorMessage] = useState('')
+  const [menu, setMenu] = useState<PublicMenuResponse | null>(null);
+  const [activeCategoryId, setActiveCategoryId] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const navRef = useRef<HTMLDivElement>(null);
+  const isScrollingRef = useRef(false);
 
   useEffect(() => {
     async function loadMenu() {
       if (!slug) {
-        setLoading(false)
-        setErrorMessage('Slug de restaurante inválido')
-        return
+        setLoading(false);
+        setErrorMessage("Slug de restaurante inválido");
+        return;
       }
-
-      setLoading(true)
-      setErrorMessage('')
-
       try {
-        const response = await menuService.getBySlug(slug)
-        setMenu(response)
-        const firstCategoryId = response.categories[0]?.id || ''
-        setActiveCategoryId(firstCategoryId)
+        const response = await menuService.getBySlug(slug);
+        setMenu(response);
+        if (response.categories.length > 0) {
+          setActiveCategoryId(response.categories[0].id);
+        }
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'No fue posible cargar el menú'
-        setErrorMessage(message)
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : "No fue posible cargar el menú"
+        );
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
+    void loadMenu();
+  }, [slug]);
 
-    void loadMenu()
-  }, [slug])
+  // IntersectionObserver for scroll tracking
+  useEffect(() => {
+    if (!menu || menu.categories.length === 0) return;
 
-  const activeCategory: PublicMenuCategory | null = useMemo(() => {
-    if (!menu || menu.categories.length === 0) {
-      return null
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (isScrollingRef.current) return;
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setActiveCategoryId(entry.target.id);
+            break;
+          }
+        }
+      },
+      { rootMargin: "-20% 0px -60% 0px", threshold: 0 }
+    );
+
+    for (const category of menu.categories) {
+      const el = sectionRefs.current[category.id];
+      if (el) observer.observe(el);
     }
 
-    return menu.categories.find((category) => category.id === activeCategoryId) || menu.categories[0]
-  }, [activeCategoryId, menu])
+    return () => observer.disconnect();
+  }, [menu]);
+
+  const scrollToCategory = useCallback(
+    (categoryId: string) => {
+      setActiveCategoryId(categoryId);
+      isScrollingRef.current = true;
+
+      const el = sectionRefs.current[categoryId];
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      setTimeout(() => {
+        isScrollingRef.current = false;
+      }, 800);
+    },
+    []
+  );
+
+  // Auto-scroll nav to keep active tab visible
+  useEffect(() => {
+    if (!navRef.current) return;
+    const activeBtn = navRef.current.querySelector('[data-active="true"]');
+    if (activeBtn) {
+      activeBtn.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center",
+      });
+    }
+  }, [activeCategoryId]);
 
   if (loading) {
     return (
-      <main className="menu-public">
-        <header className="menu-header">
-          <h1 className="title" style={{ marginBottom: 4 }}>
-            Menú Público
-          </h1>
-          <p className="muted">Cargando menú...</p>
-        </header>
+      <main className="mx-auto max-w-lg px-4 py-20 text-center">
+        <Loader2 className="mx-auto size-6 animate-spin text-muted-foreground" />
+        <p className="mt-2 text-sm text-muted-foreground">Cargando menú...</p>
       </main>
-    )
+    );
   }
 
   if (errorMessage) {
     return (
-      <main className="menu-public">
-        <header className="menu-header">
-          <h1 className="title" style={{ marginBottom: 4 }}>
-            Menú Público
-          </h1>
-          <p className="error-message">{errorMessage}</p>
-        </header>
+      <main className="mx-auto max-w-lg px-4 py-20 text-center">
+        <p className="text-sm text-destructive">{errorMessage}</p>
       </main>
-    )
+    );
   }
 
-  if (!menu) {
-    return null
-  }
+  if (!menu) return null;
+
+  const { restaurant, categories } = menu;
 
   return (
-    <main className="menu-public">
-      <header className="menu-header">
-        <h1 className="title" style={{ marginBottom: 4 }}>
-          {menu.restaurant.name}
-        </h1>
-        <p className="muted">/{menu.restaurant.slug}</p>
+    <main className="mx-auto max-w-lg min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b px-4 py-6">
+        <div className="flex items-center gap-4">
+          {restaurant.logo_url && (
+            <img
+              src={restaurant.logo_url}
+              alt={restaurant.name}
+              className="size-14 rounded-full border object-cover"
+            />
+          )}
+          <div>
+            <h1 className="text-xl font-bold">{restaurant.name}</h1>
+            {restaurant.description && (
+              <p className="text-sm text-muted-foreground">
+                {restaurant.description}
+              </p>
+            )}
+          </div>
+        </div>
 
-        {menu.categories.length > 0 && (
-          <div className="category-tabs" style={{ marginTop: 12 }}>
-            {menu.categories.map((category) => (
-              <button
-                key={category.id}
-                className={`tab ${activeCategory?.id === category.id ? 'active' : ''}`}
-                type="button"
-                onClick={() => setActiveCategoryId(category.id)}
-              >
-                {category.name}
-              </button>
-            ))}
+        {(restaurant.phone || restaurant.address || restaurant.hours) && (
+          <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
+            {restaurant.phone && (
+              <span className="flex items-center gap-1">
+                <Phone className="size-3" />
+                {restaurant.phone}
+              </span>
+            )}
+            {restaurant.address && (
+              <span className="flex items-center gap-1">
+                <MapPin className="size-3" />
+                {restaurant.address}
+              </span>
+            )}
+            {restaurant.hours && (
+              <span className="flex items-center gap-1">
+                <Clock className="size-3" />
+                Horarios disponibles
+              </span>
+            )}
           </div>
         )}
       </header>
 
-      {activeCategory ? (
-        <>
-          {activeCategory.dishes.map((dish) => (
-            <section key={dish.id} className="card" style={{ marginTop: 12 }}>
-              {dish.image_url && (
-                <img
-                  src={dish.image_url}
-                  alt={dish.name}
-                  style={{
-                    width: '100%',
-                    maxHeight: 220,
-                    objectFit: 'cover',
-                    borderRadius: 12,
-                    marginBottom: 10,
-                    border: '1px solid var(--lm-slate-200)',
-                  }}
-                />
+      {/* Category Nav */}
+      {categories.length > 0 && (
+        <nav
+          ref={navRef}
+          className="sticky top-0 z-10 flex gap-2 overflow-x-auto border-b bg-background px-4 py-3 scrollbar-none"
+        >
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              data-active={activeCategoryId === category.id}
+              onClick={() => scrollToCategory(category.id)}
+              className={cn(
+                "shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                activeCategoryId === category.id
+                  ? "border-orange-500 bg-orange-50 text-orange-700"
+                  : "border-transparent bg-muted text-muted-foreground hover:bg-accent"
               )}
+            >
+              {category.name}
+            </button>
+          ))}
+        </nav>
+      )}
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 6, gap: 10 }}>
-                <h2 style={{ margin: 0, fontSize: 20 }}>{dish.name}</h2>
-                <div style={{ textAlign: 'right' }}>
-                  {dish.price_offer !== null ? (
-                    <>
-                      <strong style={{ color: 'var(--lm-orange-600)' }}>{formatMoney(dish.price_offer)}</strong>
-                      <p className="muted" style={{ textDecoration: 'line-through' }}>
-                        {formatMoney(dish.price)}
+      {/* Menu Content */}
+      <div className="px-4 pb-10">
+        {categories.map((category) => (
+          <section
+            key={category.id}
+            id={category.id}
+            ref={(el) => {
+              sectionRefs.current[category.id] = el;
+            }}
+            className="pt-6"
+          >
+            <h2 className="mb-1 text-lg font-bold">{category.name}</h2>
+            {category.description && (
+              <p className="mb-3 text-sm text-muted-foreground">
+                {category.description}
+              </p>
+            )}
+
+            <div className="space-y-3">
+              {category.dishes.map((dish) => (
+                <div
+                  key={dish.id}
+                  className="flex gap-3 rounded-lg border bg-card p-3"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-semibold leading-tight">
+                        {dish.name}
+                      </h3>
+                      <div className="shrink-0 text-right">
+                        {dish.price_offer ? (
+                          <>
+                            <span className="text-sm font-bold text-orange-600">
+                              {formatCurrency(Number(dish.price_offer))}
+                            </span>
+                            <span className="ml-1 text-xs text-muted-foreground line-through">
+                              {formatCurrency(Number(dish.price))}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-sm font-bold text-orange-600">
+                            {formatCurrency(Number(dish.price))}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {dish.description && (
+                      <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                        {dish.description}
                       </p>
-                    </>
-                  ) : (
-                    <strong style={{ color: 'var(--lm-orange-600)' }}>{formatMoney(dish.price)}</strong>
+                    )}
+                    {dish.tags.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {dish.tags.map((tag) => (
+                          <Badge
+                            key={`${dish.id}-${tag}`}
+                            variant="secondary"
+                            className="text-[10px] px-1.5 py-0"
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {dish.image_url && (
+                    <img
+                      src={dish.image_url}
+                      alt={dish.name}
+                      className="size-20 shrink-0 rounded-lg border object-cover"
+                    />
                   )}
                 </div>
-              </div>
-
-              {dish.description && <p className="muted">{dish.description}</p>}
-
-              {dish.tags.length > 0 && (
-                <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-                  {dish.tags.map((tag) => (
-                    <span key={`${dish.id}-${tag}`} className="status-chip">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+              ))}
+              {category.dishes.length === 0 && (
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                  Sin platos disponibles en esta categoría.
+                </p>
               )}
-            </section>
-          ))}
-
-          {activeCategory.dishes.length === 0 && (
-            <section className="card" style={{ marginTop: 12 }}>
-              <p className="muted">Esta categoría aún no tiene platos disponibles.</p>
-            </section>
-          )}
-        </>
-      ) : (
-        <section className="card" style={{ marginTop: 12 }}>
-          <p className="muted">Menú en actualización. Aún no hay categorías activas.</p>
-        </section>
-      )}
+            </div>
+          </section>
+        ))}
+      </div>
     </main>
-  )
+  );
 }
