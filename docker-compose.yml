@@ -24,7 +24,20 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
+      - C:/Users/ahoyo/Desktop/secrets/livemenu-gcs.json:/run/secrets/livemenu-gcs.json:ro
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    env_file: .env
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
 
 volumes:
   postgres_data:
+  frontend_node_modules:
