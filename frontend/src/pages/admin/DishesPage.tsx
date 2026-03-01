@@ -222,12 +222,22 @@ export function DishesPage() {
                 flexWrap: 'wrap',
               }}
             >
-              <div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                {dish.image_url && (
+                  <img
+                    src={dish.image_url}
+                    alt={dish.name}
+                    style={{ width: 64, height: 64, borderRadius: 10, objectFit: 'cover', border: '1px solid var(--lm-slate-200)' }}
+                  />
+                )}
+
+                <div>
                 <strong>{dish.name}</strong>
                 <p className="muted">
                   {formatMoney(dish.price)} · {dish.categoryName}
                 </p>
                 {dish.price_offer !== null && <p className="muted">Oferta: {formatMoney(dish.price_offer)}</p>}
+                </div>
               </div>
 
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

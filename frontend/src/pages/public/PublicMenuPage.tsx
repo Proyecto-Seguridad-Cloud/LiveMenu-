@@ -117,6 +117,21 @@ export function PublicMenuPage() {
         <>
           {activeCategory.dishes.map((dish) => (
             <section key={dish.id} className="card" style={{ marginTop: 12 }}>
+              {dish.image_url && (
+                <img
+                  src={dish.image_url}
+                  alt={dish.name}
+                  style={{
+                    width: '100%',
+                    maxHeight: 220,
+                    objectFit: 'cover',
+                    borderRadius: 12,
+                    marginBottom: 10,
+                    border: '1px solid var(--lm-slate-200)',
+                  }}
+                />
+              )}
+
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 6, gap: 10 }}>
                 <h2 style={{ margin: 0, fontSize: 20 }}>{dish.name}</h2>
                 <div style={{ textAlign: 'right' }}>

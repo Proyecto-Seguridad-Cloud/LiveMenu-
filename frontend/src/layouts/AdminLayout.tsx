@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { restaurantService } from '../services/restaurant'
 
 const navItems = [
   { to: '/admin', label: 'Inicio' },
@@ -12,7 +14,26 @@ const navItems = [
 
 export function AdminLayout() {
   const navigate = useNavigate()
-  const { logout } = useAuth()
+  const { token, logout } = useAuth()
+  const [restaurantSlug, setRestaurantSlug] = useState('')
+
+  useEffect(() => {
+    async function loadRestaurantSlug() {
+      if (!token) {
+        setRestaurantSlug('')
+        return
+      }
+
+      try {
+        const restaurant = await restaurantService.getCurrent(token)
+        setRestaurantSlug(restaurant.slug)
+      } catch {
+        setRestaurantSlug('')
+      }
+    }
+
+    void loadRestaurantSlug()
+  }, [token])
 
   async function handleLogout() {
     await logout()
@@ -48,9 +69,15 @@ export function AdminLayout() {
             <strong>Sesión activa</strong>
           </div>
           <div className="topbar-actions">
-            <a className="btn btn-ghost" href="/m/demo" target="_blank" rel="noreferrer">
-              Ver menú público
-            </a>
+            {restaurantSlug ? (
+              <a className="btn btn-ghost" href={`/m/${restaurantSlug}`} target="_blank" rel="noreferrer">
+                Ver menú público
+              </a>
+            ) : (
+              <button className="btn btn-ghost" type="button" onClick={() => navigate('/admin/restaurant')}>
+                Configurar restaurante
+              </button>
+            )}
             <button className="btn btn-primary" type="button" onClick={handleLogout}>
               Cerrar sesión
             </button>
