@@ -106,15 +106,50 @@ class GCSStorageProvider(StorageProvider):
         self.bucket_name = bucket_name
         self.public_base_url = public_base_url.rstrip("/")
 
-        if credentials_file:
-            self.client = storage.Client.from_service_account_json(
-                credentials_file,
-                project=project_id or None,
-            )
-        else:
-            self.client = storage.Client(project=project_id or None)
+        try:
+            if credentials_file:
+                resolved_credentials_file = self._resolve_credentials_file(credentials_file)
+                self.client = storage.Client.from_service_account_json(
+                    str(resolved_credentials_file),
+                    project=project_id or None,
+                )
+            else:
+                self.client = storage.Client(project=project_id or None)
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"No se pudo inicializar GCS: {exc}",
+            ) from exc
 
         self.bucket = self.client.bucket(bucket_name)
+
+    @staticmethod
+    def _resolve_credentials_file(credentials_file: str) -> Path:
+        credentials_path = Path(credentials_file)
+
+        if credentials_path.is_file():
+            return credentials_path
+
+        if credentials_path.is_dir():
+            preferred = credentials_path / "livemenu-gcs.json"
+            if preferred.is_file():
+                return preferred
+
+            json_files = sorted(credentials_path.glob("*.json"))
+            if json_files:
+                return json_files[0]
+
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=(
+                    f"La ruta de credenciales GCS '{credentials_file}' es un directorio sin archivos JSON. "
+                    "Monta el archivo de credenciales o actualiza GCS_CREDENTIALS_FILE."
+                ),
+            )
+
+        return credentials_path
 
     def save(self, filename: str, data: bytes, content_type: str) -> str:
         blob = self.bucket.blob(filename)

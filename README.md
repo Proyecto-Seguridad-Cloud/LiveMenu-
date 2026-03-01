@@ -101,7 +101,6 @@ DB_PORT=5432
 JWT_SECRET_KEY=
 JWT_ALGORITHM=HS256
 JWT_EXPIRE_MINUTES=60
-ENVIRONMENT=development
 
 STORAGE_PROVIDER=local
 UPLOAD_DIR=uploads
@@ -137,7 +136,6 @@ VITE_APP_NAME=LiveMenu
 | `JWT_SECRET_KEY` | Clave para firmar/verificar tokens JWT. | Debe ser secreta y aleatoria. |
 | `JWT_ALGORITHM` | Algoritmo de firma JWT. | Valor actual recomendado: `HS256`. |
 | `JWT_EXPIRE_MINUTES` | Tiempo de expiración del token de acceso. | Controla duración de sesión. |
-| `ENVIRONMENT` | Contexto de ejecución de la app (`development`, `staging`, `production`). | Se añadió para estandarizar configuración por entorno y facilitar futuras reglas/ajustes según ambiente. |
 | `STORAGE_PROVIDER` | Motor de almacenamiento de imágenes. | `local` o `gcs`. |
 | `UPLOAD_DIR` | Carpeta local para archivos cuando `STORAGE_PROVIDER=local`. | Ej: `uploads`. |
 | `IMAGE_MAX_SIZE_MB` | Tamaño máximo permitido por imagen. | Protege contra uploads excesivos. |
@@ -168,7 +166,6 @@ VITE_APP_NAME=LiveMenu
 | `JWT_SECRET_KEY` | Obligatoria | Clave de firma JWT; no dejar vacía en entornos reales. |
 | `JWT_ALGORITHM` | Obligatoria | Algoritmo JWT (`HS256`). |
 | `JWT_EXPIRE_MINUTES` | Opcional (recomendada) | Tiene default en backend (`60`). |
-| `ENVIRONMENT` | Opcional (recomendada) | Tiene default (`development`), útil para separar ambientes. |
 | `STORAGE_PROVIDER` | Obligatoria | Define `local` o `gcs`. |
 | `UPLOAD_DIR` | Obligatoria para `local` | Carpeta de subida en almacenamiento local. |
 | `IMAGE_MAX_SIZE_MB` | Opcional | Tiene default (`5`). |
