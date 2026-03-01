@@ -17,3 +17,4 @@ pydantic[email]
 python-multipart==0.0.12
 Pillow==10.4.0
 google-cloud-storage==2.18.2
+qrcode==7.4.2

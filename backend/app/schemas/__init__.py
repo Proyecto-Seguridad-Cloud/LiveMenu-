@@ -15,3 +15,7 @@ from .dish import DishOut as DishOut
 from .dish import DishAvailabilityUpdate as DishAvailabilityUpdate
 from .upload import UploadImageResponse as UploadImageResponse
 from .upload import DeleteUploadResponse as DeleteUploadResponse
+from .menu import PublicMenuDish as PublicMenuDish
+from .menu import PublicMenuCategory as PublicMenuCategory
+from .menu import PublicMenuRestaurant as PublicMenuRestaurant
+from .menu import PublicMenuResponse as PublicMenuResponse

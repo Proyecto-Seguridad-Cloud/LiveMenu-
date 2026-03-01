@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     IMAGE_MAX_SIZE_MB: int = 5
     IMAGE_WORKERS: int = 2
     PUBLIC_BASE_URL: str = "http://localhost:8000"
+    MENU_CACHE_TTL_SECONDS: int = 60
     GCS_BUCKET_NAME: str = ""
     GCS_PROJECT_ID: str = ""
     GCS_CREDENTIALS_FILE: str = ""
