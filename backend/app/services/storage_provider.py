@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -15,6 +16,10 @@ class StorageProvider(ABC):
 
     @abstractmethod
     def delete_by_prefix(self, prefix: str) -> int:
+        raise NotImplementedError
+
+    @abstractmethod
+    def list_images(self, prefix: str | None = None) -> list[dict]:
         raise NotImplementedError
 
 
@@ -40,6 +45,48 @@ class LocalStorageProvider(StorageProvider):
                 file_path.unlink(missing_ok=True)
                 deleted += 1
         return deleted
+
+    def list_images(self, prefix: str | None = None) -> list[dict]:
+        grouped: dict[str, dict] = {}
+        if not self.upload_dir.exists():
+            return []
+
+        for file_path in self.upload_dir.iterdir():
+            if not file_path.is_file():
+                continue
+
+            stem = file_path.stem
+            if "_" not in stem:
+                continue
+
+            file_id, variant = stem.rsplit("_", 1)
+            if not file_id or not variant:
+                continue
+
+            if prefix and not file_id.startswith(prefix):
+                continue
+
+            file_stat = file_path.stat()
+            file_created_at = datetime.fromtimestamp(file_stat.st_mtime, tz=timezone.utc)
+
+            grouped.setdefault(
+                file_id,
+                {
+                    "file_id": file_id,
+                    "urls": {},
+                    "created_at": file_created_at,
+                },
+            )
+            grouped[file_id]["urls"][variant] = f"{self.public_base_url}/uploads/{file_path.name}"
+
+            if file_created_at > grouped[file_id]["created_at"]:
+                grouped[file_id]["created_at"] = file_created_at
+
+        return sorted(
+            grouped.values(),
+            key=lambda item: item["created_at"],
+            reverse=True,
+        )
 
 
 class GCSStorageProvider(StorageProvider):
@@ -81,6 +128,46 @@ class GCSStorageProvider(StorageProvider):
             blob.delete()
             deleted += 1
         return deleted
+
+    def list_images(self, prefix: str | None = None) -> list[dict]:
+        grouped: dict[str, dict] = {}
+        blobs = self.client.list_blobs(self.bucket_name)
+
+        for blob in blobs:
+            if blob.name.endswith("/"):
+                continue
+
+            stem = Path(blob.name).stem
+            if "_" not in stem:
+                continue
+
+            file_id, variant = stem.rsplit("_", 1)
+            if not file_id or not variant:
+                continue
+
+            if prefix and not file_id.startswith(prefix):
+                continue
+
+            blob_created_at = blob.updated or datetime.now(timezone.utc)
+
+            grouped.setdefault(
+                file_id,
+                {
+                    "file_id": file_id,
+                    "urls": {},
+                    "created_at": blob_created_at,
+                },
+            )
+            grouped[file_id]["urls"][variant] = f"{self.public_base_url}/{self.bucket_name}/{blob.name}"
+
+            if blob_created_at > grouped[file_id]["created_at"]:
+                grouped[file_id]["created_at"] = blob_created_at
+
+        return sorted(
+            grouped.values(),
+            key=lambda item: item["created_at"],
+            reverse=True,
+        )
 
 
 _provider_instance: Optional[StorageProvider] = None

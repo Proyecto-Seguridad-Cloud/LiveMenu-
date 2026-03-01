@@ -30,9 +30,13 @@ const navItems = [
 function SidebarContent({
   onClose,
   restaurantSlug,
+  restaurantLogoUrl,
+  onLogoError,
 }: {
   onClose?: () => void;
   restaurantSlug: string;
+  restaurantLogoUrl: string;
+  onLogoError?: () => void;
 }) {
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -46,9 +50,18 @@ function SidebarContent({
     <div className="flex h-full flex-col bg-sidebar">
       <div className="flex items-center justify-between border-b px-4 py-5">
         <div className="flex items-center gap-2">
-          <span className="flex size-8 items-center justify-center rounded-xl bg-primary text-sm font-extrabold text-white shadow-sm">
-            L
-          </span>
+          {restaurantLogoUrl ? (
+            <img
+              src={restaurantLogoUrl}
+              alt="Logo restaurante"
+              className="size-8 rounded-xl border object-cover"
+              onError={onLogoError}
+            />
+          ) : (
+            <span className="flex size-8 items-center justify-center rounded-xl bg-primary text-sm font-extrabold text-white shadow-sm">
+              L
+            </span>
+          )}
           <h1 className="text-xl font-bold tracking-tight">LiveMenu</h1>
         </div>
         {onClose && (
@@ -116,18 +129,22 @@ export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { token } = useAuth();
   const [restaurantSlug, setRestaurantSlug] = useState("");
+  const [restaurantLogoUrl, setRestaurantLogoUrl] = useState("");
 
   useEffect(() => {
     async function loadRestaurantSlug() {
       if (!token) {
         setRestaurantSlug("");
+        setRestaurantLogoUrl("");
         return;
       }
       try {
         const restaurant = await restaurantService.getCurrent(token);
         setRestaurantSlug(restaurant.slug);
+        setRestaurantLogoUrl(restaurant.logo_url || "");
       } catch {
         setRestaurantSlug("");
+        setRestaurantLogoUrl("");
       }
     }
     void loadRestaurantSlug();
@@ -137,7 +154,11 @@ export function AdminLayout() {
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop sidebar */}
       <aside className="hidden w-64 shrink-0 border-r bg-sidebar md:block">
-        <SidebarContent restaurantSlug={restaurantSlug} />
+        <SidebarContent
+          restaurantSlug={restaurantSlug}
+          restaurantLogoUrl={restaurantLogoUrl}
+          onLogoError={() => setRestaurantLogoUrl("")}
+        />
       </aside>
 
       {/* Mobile sidebar */}
@@ -149,6 +170,8 @@ export function AdminLayout() {
           <SidebarContent
             onClose={() => setSidebarOpen(false)}
             restaurantSlug={restaurantSlug}
+            restaurantLogoUrl={restaurantLogoUrl}
+            onLogoError={() => setRestaurantLogoUrl("")}
           />
         </SheetContent>
       </Sheet>

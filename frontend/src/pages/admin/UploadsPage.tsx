@@ -1,5 +1,5 @@
 import type { ChangeEvent } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Upload, Trash2, Copy, Loader2, ExternalLink, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -31,8 +31,42 @@ export function UploadsPage() {
 
   const [uploads, setUploads] = useState<UploadImageResponse[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [loadingUploads, setLoadingUploads] = useState(false);
   const [deleteFileId, setDeleteFileId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    if (!token) return;
+    const authToken = token;
+
+    let isMounted = true;
+
+    async function loadImages() {
+      try {
+        setLoadingUploads(true);
+        const images = await uploadsService.listImages(authToken);
+        if (isMounted) {
+          setUploads(images);
+        }
+      } catch (error) {
+        if (isMounted) {
+          toast.error(
+            error instanceof Error ? error.message : "Error al cargar imágenes"
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingUploads(false);
+        }
+      }
+    }
+
+    loadImages();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [token]);
 
   async function handleSelectFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -154,10 +188,16 @@ export function UploadsPage() {
       </Card>
 
       {/* Uploaded Images */}
-      {uploads.length === 0 ? (
+      {loadingUploads ? (
         <Card>
           <CardContent className="py-10 text-center text-muted-foreground">
-            Aún no hay imágenes cargadas en esta sesión.
+            Cargando imágenes...
+          </CardContent>
+        </Card>
+      ) : uploads.length === 0 ? (
+        <Card>
+          <CardContent className="py-10 text-center text-muted-foreground">
+            Aún no hay imágenes subidas.
           </CardContent>
         </Card>
       ) : (
@@ -174,9 +214,6 @@ export function UploadsPage() {
                       <div className="min-w-0">
                         <p className="truncate text-base font-semibold">
                           {item.original_filename}
-                        </p>
-                        <p className="mt-1 break-all text-xs text-muted-foreground">
-                          ID: {item.file_id}
                         </p>
                       </div>
                       <Button

@@ -6,6 +6,8 @@ import App from './App.tsx'
 import { AuthProvider } from './context/AuthContext'
 import { Toaster } from '@/components/ui/sonner'
 
+document.title = import.meta.env.VITE_APP_NAME || 'frontend'
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>

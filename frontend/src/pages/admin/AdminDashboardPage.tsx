@@ -56,6 +56,7 @@ export function AdminDashboardPage() {
 
   const [restaurantName, setRestaurantName] = useState("");
   const [slug, setSlug] = useState("");
+  const [restaurantLogoUrl, setRestaurantLogoUrl] = useState("");
   const [categoryCount, setCategoryCount] = useState(0);
   const [dishCount, setDishCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -71,6 +72,7 @@ export function AdminDashboardPage() {
         const restaurant = await restaurantService.getCurrent(token);
         setRestaurantName(restaurant.name);
         setSlug(restaurant.slug);
+        setRestaurantLogoUrl(restaurant.logo_url || "");
         setHasRestaurant(true);
 
         const [cats, dishes] = await Promise.all([
@@ -81,6 +83,7 @@ export function AdminDashboardPage() {
         setDishCount(dishes.length);
       } catch {
         setHasRestaurant(false);
+        setRestaurantLogoUrl("");
       } finally {
         setLoading(false);
       }
@@ -135,9 +138,18 @@ export function AdminDashboardPage() {
                   /{slug}
                 </CardDescription>
               </div>
-              <span className="inline-flex size-10 items-center justify-center rounded-xl bg-secondary text-primary">
-                <Store className="size-5" />
-              </span>
+              {restaurantLogoUrl ? (
+                <img
+                  src={restaurantLogoUrl}
+                  alt={`Logo de ${restaurantName}`}
+                  className="size-12 rounded-xl border object-cover"
+                  onError={() => setRestaurantLogoUrl("")}
+                />
+              ) : (
+                <span className="inline-flex size-12 items-center justify-center rounded-xl bg-secondary text-primary">
+                  <Store className="size-5" />
+                </span>
+              )}
             </CardHeader>
             <CardContent className="px-4 pb-1">
               <a

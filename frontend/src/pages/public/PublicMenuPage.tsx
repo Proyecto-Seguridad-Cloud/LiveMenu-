@@ -121,21 +121,25 @@ export function PublicMenuPage() {
   const { restaurant, categories } = menu;
 
   return (
-    <main className="mx-auto max-w-lg min-h-screen bg-background">
+    <main className="mx-auto min-h-screen max-w-lg bg-background md:max-w-2xl lg:max-w-3xl">
       {/* Header */}
-      <header className="border-b px-4 py-6">
-        <div className="flex items-center gap-4">
-          {restaurant.logo_url && (
+      <header className="border-b bg-card px-4 py-4">
+        <div className="flex items-start gap-3">
+          {restaurant.logo_url ? (
             <img
               src={restaurant.logo_url}
               alt={restaurant.name}
-              className="size-14 rounded-full border object-cover"
+              className="size-14 shrink-0 rounded-xl border object-cover"
             />
+          ) : (
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-xl border bg-secondary text-base font-bold text-primary">
+              {restaurant.name.charAt(0).toUpperCase()}
+            </div>
           )}
-          <div>
-            <h1 className="text-xl font-bold">{restaurant.name}</h1>
+          <div className="min-w-0">
+            <h1 className="truncate text-2xl font-bold leading-tight">{restaurant.name}</h1>
             {restaurant.description && (
-              <p className="text-sm text-muted-foreground">
+              <p className="mt-1 text-sm leading-snug text-muted-foreground">
                 {restaurant.description}
               </p>
             )}
@@ -143,21 +147,21 @@ export function PublicMenuPage() {
         </div>
 
         {(restaurant.phone || restaurant.address || restaurant.hours) && (
-          <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
+          <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
             {restaurant.phone && (
-              <span className="flex items-center gap-1">
+              <span className="inline-flex items-center gap-1 rounded-full border bg-background px-2.5 py-1">
                 <Phone className="size-3" />
                 {restaurant.phone}
               </span>
             )}
             {restaurant.address && (
-              <span className="flex items-center gap-1">
+              <span className="inline-flex items-center gap-1 rounded-full border bg-background px-2.5 py-1">
                 <MapPin className="size-3" />
                 {restaurant.address}
               </span>
             )}
             {restaurant.hours && (
-              <span className="flex items-center gap-1">
+              <span className="inline-flex items-center gap-1 rounded-full border bg-background px-2.5 py-1">
                 <Clock className="size-3" />
                 Horarios disponibles
               </span>
@@ -170,7 +174,7 @@ export function PublicMenuPage() {
       {categories.length > 0 && (
         <nav
           ref={navRef}
-          className="sticky top-0 z-10 flex gap-2 overflow-x-auto border-b bg-background px-4 py-3 scrollbar-none"
+          className="sticky top-0 z-10 flex gap-2 overflow-x-auto border-b bg-background/95 px-4 py-2.5 backdrop-blur scrollbar-none"
         >
           {categories.map((category) => (
             <button
@@ -178,10 +182,10 @@ export function PublicMenuPage() {
               data-active={activeCategoryId === category.id}
               onClick={() => scrollToCategory(category.id)}
               className={cn(
-                "shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                "shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors",
                 activeCategoryId === category.id
-                  ? "border-orange-500 bg-orange-50 text-orange-700"
-                  : "border-transparent bg-muted text-muted-foreground hover:bg-accent"
+                  ? "border-primary bg-secondary text-primary"
+                  : "border-border bg-card text-muted-foreground hover:bg-accent"
               )}
             >
               {category.name}
@@ -199,11 +203,11 @@ export function PublicMenuPage() {
             ref={(el) => {
               sectionRefs.current[category.id] = el;
             }}
-            className="pt-6"
+            className="pt-5"
           >
-            <h2 className="mb-1 text-lg font-bold">{category.name}</h2>
+            <h2 className="mb-1 text-xl font-bold tracking-tight sm:text-2xl">{category.name}</h2>
             {category.description && (
-              <p className="mb-3 text-sm text-muted-foreground">
+              <p className="mb-3 text-sm leading-snug text-muted-foreground">
                 {category.description}
               </p>
             )}
@@ -212,56 +216,58 @@ export function PublicMenuPage() {
               {category.dishes.map((dish) => (
                 <div
                   key={dish.id}
-                  className="flex gap-3 rounded-lg border bg-card p-3"
+                  className="flex gap-3 rounded-2xl border bg-card p-2.5 sm:p-3"
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-semibold leading-tight">
-                        {dish.name}
-                      </h3>
-                      <div className="shrink-0 text-right">
-                        {dish.price_offer ? (
-                          <>
-                            <span className="text-sm font-bold text-orange-600">
-                              {formatCurrency(Number(dish.price_offer))}
-                            </span>
-                            <span className="ml-1 text-xs text-muted-foreground line-through">
-                              {formatCurrency(Number(dish.price))}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="text-sm font-bold text-orange-600">
-                            {formatCurrency(Number(dish.price))}
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                    <h3 className="text-lg font-semibold leading-tight tracking-tight sm:text-xl">
+                      {dish.name}
+                    </h3>
                     {dish.description && (
-                      <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                      <p className="mt-1 line-clamp-2 text-xs leading-snug text-muted-foreground sm:text-sm">
                         {dish.description}
                       </p>
                     )}
                     {dish.tags.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {dish.tags.map((tag) => (
-                          <Badge
-                            key={`${dish.id}-${tag}`}
-                            variant="secondary"
-                            className="text-[10px] px-1.5 py-0"
-                          >
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {dish.tags.map((tag) => (
+                        <Badge
+                          key={`${dish.id}-${tag}`}
+                          variant="secondary"
+                          className="text-[10px] px-1.5 py-0"
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
                     )}
                   </div>
-                  {dish.image_url && (
-                    <img
-                      src={dish.image_url}
-                      alt={dish.name}
-                      className="size-20 shrink-0 rounded-lg border object-cover"
-                    />
-                  )}
+
+                  <div className="shrink-0 flex w-20 flex-col items-end gap-2 sm:w-24">
+                    <div className="text-right leading-none">
+                      {dish.price_offer ? (
+                        <>
+                          <p className="text-lg font-bold text-primary sm:text-xl">
+                            {formatCurrency(Number(dish.price_offer))}
+                          </p>
+                          <p className="mt-0.5 text-xs text-muted-foreground line-through">
+                            {formatCurrency(Number(dish.price))}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-lg font-bold text-primary sm:text-xl">
+                          {formatCurrency(Number(dish.price))}
+                        </p>
+                      )}
+                    </div>
+
+                    {dish.image_url && (
+                      <img
+                        src={dish.image_url}
+                        alt={dish.name}
+                        className="size-[72px] rounded-xl border object-cover sm:size-20"
+                      />
+                    )}
+                  </div>
                 </div>
               ))}
               {category.dishes.length === 0 && (
