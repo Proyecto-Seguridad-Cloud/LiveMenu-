@@ -231,18 +231,18 @@ export function DishFormPage({ mode }: DishFormPageProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
+    <div className="space-y-5 sm:space-y-6">
+      <div className="flex items-start gap-3">
         <Button variant="ghost" size="icon" asChild>
           <Link to="/admin/dishes">
             <ArrowLeft className="size-5" />
           </Link>
         </Button>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-[22px] font-bold tracking-tight sm:text-[24px]">
             {mode === "new" ? "Nuevo Plato" : "Editar Plato"}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Completa la información del plato.
           </p>
         </div>
@@ -329,7 +329,7 @@ export function DishFormPage({ mode }: DishFormPageProps) {
                 Puedes subir imágenes en{" "}
                 <Link
                   to="/admin/uploads"
-                  className="text-orange-600 hover:underline"
+                  className="text-primary hover:underline"
                 >
                   Gestión de Imágenes
                 </Link>{" "}
@@ -365,12 +365,12 @@ export function DishFormPage({ mode }: DishFormPageProps) {
               <Label htmlFor="featured">Marcar como destacado</Label>
             </div>
 
-            <div className="flex gap-2 pt-2">
-              <Button type="submit" disabled={saving}>
+            <div className="grid gap-2 pt-2 sm:flex">
+              <Button type="submit" className="w-full sm:w-auto" disabled={saving}>
                 {saving && <Loader2 className="mr-2 size-4 animate-spin" />}
                 {mode === "new" ? "Crear plato" : "Guardar cambios"}
               </Button>
-              <Button variant="outline" asChild>
+              <Button variant="outline" className="w-full sm:w-auto" asChild>
                 <Link to="/admin/dishes">Cancelar</Link>
               </Button>
             </div>

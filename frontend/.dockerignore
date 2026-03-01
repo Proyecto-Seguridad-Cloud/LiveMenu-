@@ -1,3 +1,7 @@
 node_modules
 dist
-.vite
+.git
+.vscode
+*.log
+npm-debug.log*
+.env

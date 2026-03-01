@@ -168,15 +168,15 @@ export function DishesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5 sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Platos</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-[22px] font-bold tracking-tight sm:text-[24px]">Platos</h1>
+          <p className="text-sm text-muted-foreground">
             Gestiona los platos de tu menú.
           </p>
         </div>
-        <Button asChild>
+        <Button className="w-full sm:w-auto" asChild>
           <Link to="/admin/dishes/new">
             <Plus className="mr-2 size-4" />
             Nuevo plato
@@ -187,8 +187,8 @@ export function DishesPage() {
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[200px]">
+          <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-center">
+            <div className="relative w-full sm:min-w-[220px] sm:flex-1">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Buscar plato..."
@@ -201,7 +201,7 @@ export function DishesPage() {
               value={selectedCategoryId}
               onValueChange={setSelectedCategoryId}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[220px]">
                 <SelectValue placeholder="Categoría" />
               </SelectTrigger>
               <SelectContent>
@@ -217,7 +217,7 @@ export function DishesPage() {
               value={availabilityFilter}
               onValueChange={setAvailabilityFilter}
             >
-              <SelectTrigger className="w-[160px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Disponibilidad" />
               </SelectTrigger>
               <SelectContent>
@@ -242,11 +242,13 @@ export function DishesPage() {
           {filteredDishes.map((dish) => (
             <Card key={dish.id} className="overflow-hidden">
               {dish.image_url && (
-                <img
-                  src={dish.image_url}
-                  alt={dish.name}
-                  className="h-40 w-full object-cover"
-                />
+                <div className="px-4 pt-4">
+                  <img
+                    src={dish.image_url}
+                    alt={dish.name}
+                    className="h-40 w-full rounded-xl object-cover"
+                  />
+                </div>
               )}
               <CardContent className="pt-4">
                 <div className="flex items-start justify-between gap-2">
@@ -262,12 +264,12 @@ export function DishesPage() {
                         <p className="text-sm line-through text-muted-foreground">
                           {formatCurrency(Number(dish.price))}
                         </p>
-                        <p className="font-bold text-orange-600">
+                        <p className="text-lg font-bold text-primary">
                           {formatCurrency(Number(dish.price_offer))}
                         </p>
                       </>
                     ) : (
-                      <p className="font-bold">
+                      <p className="text-lg font-bold text-primary">
                         {formatCurrency(Number(dish.price))}
                       </p>
                     )}
@@ -284,7 +286,7 @@ export function DishesPage() {
                   </div>
                 )}
 
-                <div className="mt-3 flex items-center justify-between">
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={dish.available}
@@ -294,8 +296,13 @@ export function DishesPage() {
                       {dish.available ? "Disponible" : "No disponible"}
                     </span>
                   </div>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" asChild>
+                  <div className="ml-auto flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:bg-secondary hover:text-primary"
+                      asChild
+                    >
                       <Link to={`/admin/dishes/${dish.id}/edit`}>
                         <Pencil className="size-4" />
                       </Link>
@@ -303,9 +310,10 @@ export function DishesPage() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                       onClick={() => setDeleteId(dish.id)}
                     >
-                      <Trash2 className="size-4 text-destructive" />
+                      <Trash2 className="size-4" />
                     </Button>
                   </div>
                 </div>

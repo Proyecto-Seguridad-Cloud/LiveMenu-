@@ -2,6 +2,13 @@ import { apiFormRequest, apiRequest } from './http'
 import type { DeleteUploadResponse, UploadImageResponse } from '../types/upload'
 
 export const uploadsService = {
+  listImages(token: string) {
+    return apiRequest<UploadImageResponse[]>('/api/v1/admin/upload', {
+      method: 'GET',
+      token,
+    })
+  },
+
   uploadImage(token: string, file: File) {
     const formData = new FormData()
     formData.append('file', file)

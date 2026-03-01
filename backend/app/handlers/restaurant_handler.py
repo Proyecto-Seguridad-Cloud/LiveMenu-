@@ -30,7 +30,9 @@ async def update_restaurant(payload: RestaurantUpdate, db: AsyncSession = Depend
     restaurant = await RestaurantService.get_by_owner(db, current_user.id)
     if not restaurant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Restaurante no encontrado")
-    data = payload.dict(exclude_none=True)
+    data = payload.model_dump(exclude_none=True)
+    if "logo_url" in data and data["logo_url"] is not None:
+        data["logo_url"] = str(data["logo_url"])
     restaurant = await RestaurantService.update(db, restaurant, data)
     return restaurant
 
