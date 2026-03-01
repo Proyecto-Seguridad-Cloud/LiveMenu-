@@ -6,7 +6,7 @@
 - **Integrantes:**
 	- `Alejandro Hoyos` 
 	- `Santiago Pineda`
-	- `Rafel Guzman`
+	- `Rafael Guzman`
 	- `Ximena López`
 
 Sistema para gestión de menú digital con:
