@@ -30,7 +30,7 @@ Sistema para gestión de menú digital con:
 11. [Troubleshooting](#troubleshooting)
 12. [Buenas prácticas de seguridad](#buenas-prácticas-de-seguridad)
 
-## Arquitectura (Diagrama)
+## Diagrama de Arquitectura
 
 <p align="center">
 	<a href="./docs/Diagrama%20de%20Arquitectura%20de%20LiveMenu.png" target="_blank">
@@ -46,7 +46,7 @@ Sistema para gestión de menú digital con:
 
 Inserta aquí el enlace del video (demo, sustentación o walkthrough):
 
-- Link de video: `https://tu-enlace-aqui`
+- Link de video: [Video LiveMenu - Entrega 1](https://youtu.be/xrjC3klcJlo)
 
 ## Requisitos
 
@@ -477,38 +477,3 @@ docker compose up -d --build backend frontend
 
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
-
-## Troubleshooting
-
-### Backend no conecta a base de datos
-
-- Verifica que `livemenuDB` esté `healthy` con `docker compose ps`.
-- Revisa `DB_HOST=livemenuDB` en `.env`.
-
-### Cambios de código no reflejados
-
-- Reinicia servicios puntuales:
-
-```powershell
-docker compose up -d --build backend frontend
-```
-
-- Haz hard refresh en navegador (`Ctrl + F5`).
-
-### Swagger no carga
-
-- Revisa logs: `docker compose logs -f backend`.
-- Verifica que backend esté en `0.0.0.0:8000`.
-
-### Upload en GCS falla
-
-- Confirma montaje y ruta de credenciales.
-- Verifica permisos de la service account sobre el bucket.
-
-## Buenas prácticas de seguridad
-
-- No subir `.env` al repositorio.
-- No subir archivos de credenciales (`*.json`).
-- Subir solo `.env.example` con placeholders.
-- Rotar credenciales si fueron expuestas.
-
