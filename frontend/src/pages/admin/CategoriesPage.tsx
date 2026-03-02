@@ -83,26 +83,28 @@ function SortableCategoryItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-3 rounded-lg border bg-card p-3"
+      className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center"
     >
-      <button
-        className="cursor-grab touch-none text-muted-foreground hover:text-foreground"
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="size-5" />
-      </button>
+      <div className="flex w-full items-start gap-3 sm:flex-1">
+        <button
+          className="cursor-grab touch-none rounded-lg p-1 text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="size-5" />
+        </button>
 
-      <div className="flex-1 min-w-0">
-        <p className="font-medium truncate">{category.name}</p>
-        {category.description && (
-          <p className="text-sm text-muted-foreground truncate">
-            {category.description}
-          </p>
-        )}
+        <div className="min-w-0 flex-1">
+          <p className="font-medium truncate">{category.name}</p>
+          {category.description && (
+            <p className="text-sm text-muted-foreground truncate">
+              {category.description}
+            </p>
+          )}
+        </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap">
         <Badge variant={category.active ? "default" : "secondary"}>
           {category.active ? "Activa" : "Inactiva"}
         </Badge>
@@ -110,15 +112,21 @@ function SortableCategoryItem({
           checked={category.active}
           onCheckedChange={() => onToggle(category)}
         />
-        <Button variant="ghost" size="icon" onClick={() => onEdit(category)}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onEdit(category)}
+          className="text-muted-foreground hover:bg-secondary hover:text-primary"
+        >
           <Pencil className="size-4" />
         </Button>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => onDelete(category.id)}
+          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
         >
-          <Trash2 className="size-4 text-destructive" />
+          <Trash2 className="size-4" />
         </Button>
       </div>
     </div>
@@ -319,11 +327,11 @@ export function CategoriesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5 sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Categorías</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-[22px] font-bold tracking-tight sm:text-[24px]">Categorías</h1>
+          <p className="text-sm text-muted-foreground">
             Arrastra para reordenar. El orden se guarda automáticamente.
           </p>
         </div>
@@ -397,15 +405,16 @@ export function CategoriesPage() {
                 onChange={(e) => setFormDescription(e.target.value)}
               />
             </div>
-            <div className="flex justify-end gap-2">
+            <div className="grid gap-2 pt-1 sm:flex sm:justify-end">
               <Button
                 type="button"
                 variant="outline"
+                className="w-full sm:w-auto"
                 onClick={() => setDialogOpen(false)}
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={saving}>
+              <Button type="submit" className="w-full sm:w-auto" disabled={saving}>
                 {saving && <Loader2 className="mr-2 size-4 animate-spin" />}
                 {editingCategory ? "Guardar" : "Crear"}
               </Button>

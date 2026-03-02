@@ -134,10 +134,10 @@ export function RestaurantPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Mi Restaurante</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-[22px] font-bold tracking-tight sm:text-[24px]">Mi Restaurante</h1>
+        <p className="text-sm text-muted-foreground">
           Datos principales, logo, contacto y horarios.
         </p>
       </div>
@@ -155,17 +155,17 @@ export function RestaurantPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">
+          <CardTitle className="text-[20px] font-semibold">
             {hasRestaurant ? "Editar información" : "Crear restaurante"}
           </CardTitle>
           {hasRestaurant && slug && (
-            <CardDescription className="flex items-center gap-2">
+            <CardDescription className="flex flex-wrap items-center gap-x-2 gap-y-1">
               Slug: <code className="text-xs">{slug}</code>
               <a
                 href={`/m/${slug}`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 text-orange-600 hover:underline"
+                className="inline-flex items-center gap-1 text-primary hover:underline"
               >
                 <ExternalLink className="size-3" />
                 Ver menú
@@ -239,8 +239,8 @@ export function RestaurantPage() {
               />
             </div>
 
-            <div className="flex gap-2 pt-2">
-              <Button type="submit" disabled={saving}>
+            <div className="grid gap-2 pt-2 sm:flex">
+              <Button type="submit" className="w-full sm:w-auto" disabled={saving}>
                 {saving && <Loader2 className="mr-2 size-4 animate-spin" />}
                 {hasRestaurant ? "Guardar cambios" : "Crear restaurante"}
               </Button>

@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -15,6 +16,10 @@ class StorageProvider(ABC):
 
     @abstractmethod
     def delete_by_prefix(self, prefix: str) -> int:
+        raise NotImplementedError
+
+    @abstractmethod
+    def list_images(self, prefix: str | None = None) -> list[dict]:
         raise NotImplementedError
 
 
@@ -41,6 +46,48 @@ class LocalStorageProvider(StorageProvider):
                 deleted += 1
         return deleted
 
+    def list_images(self, prefix: str | None = None) -> list[dict]:
+        grouped: dict[str, dict] = {}
+        if not self.upload_dir.exists():
+            return []
+
+        for file_path in self.upload_dir.iterdir():
+            if not file_path.is_file():
+                continue
+
+            stem = file_path.stem
+            if "_" not in stem:
+                continue
+
+            file_id, variant = stem.rsplit("_", 1)
+            if not file_id or not variant:
+                continue
+
+            if prefix and not file_id.startswith(prefix):
+                continue
+
+            file_stat = file_path.stat()
+            file_created_at = datetime.fromtimestamp(file_stat.st_mtime, tz=timezone.utc)
+
+            grouped.setdefault(
+                file_id,
+                {
+                    "file_id": file_id,
+                    "urls": {},
+                    "created_at": file_created_at,
+                },
+            )
+            grouped[file_id]["urls"][variant] = f"{self.public_base_url}/uploads/{file_path.name}"
+
+            if file_created_at > grouped[file_id]["created_at"]:
+                grouped[file_id]["created_at"] = file_created_at
+
+        return sorted(
+            grouped.values(),
+            key=lambda item: item["created_at"],
+            reverse=True,
+        )
+
 
 class GCSStorageProvider(StorageProvider):
     def __init__(
@@ -59,15 +106,50 @@ class GCSStorageProvider(StorageProvider):
         self.bucket_name = bucket_name
         self.public_base_url = public_base_url.rstrip("/")
 
-        if credentials_file:
-            self.client = storage.Client.from_service_account_json(
-                credentials_file,
-                project=project_id or None,
-            )
-        else:
-            self.client = storage.Client(project=project_id or None)
+        try:
+            if credentials_file:
+                resolved_credentials_file = self._resolve_credentials_file(credentials_file)
+                self.client = storage.Client.from_service_account_json(
+                    str(resolved_credentials_file),
+                    project=project_id or None,
+                )
+            else:
+                self.client = storage.Client(project=project_id or None)
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"No se pudo inicializar GCS: {exc}",
+            ) from exc
 
         self.bucket = self.client.bucket(bucket_name)
+
+    @staticmethod
+    def _resolve_credentials_file(credentials_file: str) -> Path:
+        credentials_path = Path(credentials_file)
+
+        if credentials_path.is_file():
+            return credentials_path
+
+        if credentials_path.is_dir():
+            preferred = credentials_path / "livemenu-gcs.json"
+            if preferred.is_file():
+                return preferred
+
+            json_files = sorted(credentials_path.glob("*.json"))
+            if json_files:
+                return json_files[0]
+
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=(
+                    f"La ruta de credenciales GCS '{credentials_file}' es un directorio sin archivos JSON. "
+                    "Monta el archivo de credenciales o actualiza GCS_CREDENTIALS_FILE."
+                ),
+            )
+
+        return credentials_path
 
     def save(self, filename: str, data: bytes, content_type: str) -> str:
         blob = self.bucket.blob(filename)
@@ -81,6 +163,46 @@ class GCSStorageProvider(StorageProvider):
             blob.delete()
             deleted += 1
         return deleted
+
+    def list_images(self, prefix: str | None = None) -> list[dict]:
+        grouped: dict[str, dict] = {}
+        blobs = self.client.list_blobs(self.bucket_name)
+
+        for blob in blobs:
+            if blob.name.endswith("/"):
+                continue
+
+            stem = Path(blob.name).stem
+            if "_" not in stem:
+                continue
+
+            file_id, variant = stem.rsplit("_", 1)
+            if not file_id or not variant:
+                continue
+
+            if prefix and not file_id.startswith(prefix):
+                continue
+
+            blob_created_at = blob.updated or datetime.now(timezone.utc)
+
+            grouped.setdefault(
+                file_id,
+                {
+                    "file_id": file_id,
+                    "urls": {},
+                    "created_at": blob_created_at,
+                },
+            )
+            grouped[file_id]["urls"][variant] = f"{self.public_base_url}/{self.bucket_name}/{blob.name}"
+
+            if blob_created_at > grouped[file_id]["created_at"]:
+                grouped[file_id]["created_at"] = blob_created_at
+
+        return sorted(
+            grouped.values(),
+            key=lambda item: item["created_at"],
+            reverse=True,
+        )
 
 
 _provider_instance: Optional[StorageProvider] = None

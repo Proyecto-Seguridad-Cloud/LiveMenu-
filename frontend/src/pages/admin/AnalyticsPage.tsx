@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   BarChart3,
   Clock,
@@ -34,6 +34,7 @@ export function AnalyticsPage() {
   const { token } = useAuth();
   const [data, setData] = useState<AnalyticsSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -50,6 +51,32 @@ export function AnalyticsPage() {
     void load();
   }, [token]);
 
+  const maxCount = useMemo(
+    () => Math.max(...(data?.daily_breakdown.map((d) => d.count) ?? [0]), 1),
+    [data]
+  );
+
+  async function handleExportCsv() {
+    if (!token) return;
+    try {
+      setExporting(true);
+      const blob = await analyticsService.exportCsv(token);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "analytics.csv";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      toast.success("CSV exportado correctamente");
+    } catch {
+      toast.error("No fue posible exportar analíticas");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -60,34 +87,35 @@ export function AnalyticsPage() {
 
   if (!data) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Analíticas</h1>
-          <p className="text-muted-foreground">No hay datos disponibles aún.</p>
-        </div>
+      <div className="space-y-4">
+        <h1 className="text-[22px] font-bold tracking-tight sm:text-[24px]">Analíticas</h1>
+        <p className="text-sm text-muted-foreground">No hay datos disponibles aún.</p>
       </div>
     );
   }
 
-  const maxDailyCount = Math.max(...data.daily_breakdown.map((d) => d.count), 1);
   const maxHourlyCount = Math.max(...data.hourly_breakdown.map((d) => d.count), 1);
   const maxWeekdayCount = Math.max(...data.weekday_breakdown.map((d) => d.count), 1);
   const totalDevices = data.device_breakdown.reduce((s, d) => s + d.count, 0) || 1;
   const totalReferrers = data.referrer_breakdown.reduce((s, d) => s + d.count, 0) || 1;
-  const totalNewRet = (data.new_visitors + data.returning_visitors) || 1;
+  const totalNewRet = data.new_visitors + data.returning_visitors || 1;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Analíticas</h1>
-        <p className="text-muted-foreground">Métricas de escaneos del menú público (últimos 30 días).</p>
+        <h1 className="text-[22px] font-bold tracking-tight sm:text-[24px]">Analíticas</h1>
+        <p className="text-sm text-muted-foreground">
+          Métricas de escaneos del menú público (últimos 30 días).
+        </p>
       </div>
 
       {/* Top metric cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total escaneos</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total escaneos
+            </CardTitle>
             <Eye className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -96,7 +124,9 @@ export function AnalyticsPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Últimos 7 días</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Últimos 7 días
+            </CardTitle>
             <BarChart3 className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -105,7 +135,9 @@ export function AnalyticsPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Últimos 30 días</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Últimos 30 días
+            </CardTitle>
             <BarChart3 className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -114,7 +146,9 @@ export function AnalyticsPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Visitantes únicos</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Visitantes únicos
+            </CardTitle>
             <Users className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -125,13 +159,20 @@ export function AnalyticsPage() {
 
       {/* Daily chart */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Escaneos por día</CardTitle>
-          <Button variant="outline" size="sm" asChild>
-            <a href="/api/v1/admin/analytics/export" download>
-              <Download className="mr-2 size-4" />
-              Exportar CSV
-            </a>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle className="text-base">Escaneos por día (últimos 30 días)</CardTitle>
+          <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={exporting}>
+            {exporting ? (
+              <>
+                <Loader2 className="mr-2 size-4 animate-spin" />
+                Exportando...
+              </>
+            ) : (
+              <>
+                <Download className="mr-2 size-4" />
+                Exportar CSV
+              </>
+            )}
           </Button>
         </CardHeader>
         <CardContent>
@@ -140,28 +181,30 @@ export function AnalyticsPage() {
               Aún no hay escaneos registrados.
             </p>
           ) : (
-            <div className="flex items-end gap-[2px] h-44">
-              {data.daily_breakdown.map((item) => (
-                <div key={item.day} className="group relative flex-1" style={{ height: "100%" }}>
-                  <div
-                    className="absolute bottom-0 w-full rounded-t bg-orange-500 transition-colors group-hover:bg-orange-600"
-                    style={{
-                      height: `${(item.count / maxDailyCount) * 100}%`,
-                      minHeight: item.count > 0 ? "4px" : "0px",
-                    }}
-                  />
-                  <div className="absolute -top-8 left-1/2 hidden -translate-x-1/2 rounded bg-foreground px-2 py-1 text-[10px] text-background group-hover:block whitespace-nowrap">
-                    {item.day}: {item.count}
+            <div className="overflow-x-auto">
+              <div className="flex h-44 min-w-max items-end gap-1 rounded-xl border bg-secondary/20 p-2">
+                {data.daily_breakdown.map((item) => (
+                  <div key={item.day} className="group relative h-full w-3 shrink-0 sm:w-4">
+                    <div
+                      className="absolute bottom-0 w-full rounded-sm bg-primary/80 transition-colors group-hover:bg-primary"
+                      style={{
+                        height: `${(item.count / maxCount) * 100}%`,
+                        minHeight: item.count > 0 ? "4px" : "0px",
+                      }}
+                    />
+                    <div className="absolute -top-8 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded bg-foreground px-2 py-1 text-[10px] text-background group-hover:block">
+                      {item.day}: {item.count}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
 
       {/* Two-column grid: New vs Returning + Devices */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
         {/* New vs Returning */}
         <Card>
           <CardHeader>
@@ -228,7 +271,7 @@ export function AnalyticsPage() {
       </div>
 
       {/* Two-column: Traffic sources + Peak hours */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
         {/* Traffic sources */}
         <Card>
           <CardHeader>
@@ -274,7 +317,11 @@ export function AnalyticsPage() {
                   const item = data.hourly_breakdown.find((i) => i.hour === h);
                   const count = item?.count ?? 0;
                   return (
-                    <div key={h} className="group relative flex-1" style={{ height: "100%" }}>
+                    <div
+                      key={h}
+                      className="group relative flex-1"
+                      style={{ height: "100%" }}
+                    >
                       <div
                         className="absolute bottom-0 w-full rounded-t bg-violet-500 transition-colors group-hover:bg-violet-600"
                         style={{
@@ -339,7 +386,7 @@ export function AnalyticsPage() {
       </Card>
 
       {/* Interactions grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
