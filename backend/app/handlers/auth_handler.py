@@ -38,8 +38,16 @@ async def refresh(request: Request, current_user=Depends(get_current_user)):
 
 @router.post("/logout", response_model=LogoutResponse)
 @limiter.limit("10/minute")
-async def logout(request: Request, current_user=Depends(get_current_user)):
-    _ = request, current_user
+async def logout(request: Request, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    # Extract Bearer token from Authorization header
+    auth: str | None = request.headers.get("authorization")
+    token = None
+    if auth and auth.lower().startswith("bearer "):
+        token = auth.split(" ", 1)[1].strip()
+
+    if token:
+        return await AuthService.revoke(db, token)
+
     return AuthService.logout()
 
 

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from sqlalchemy import select
 from app.models.user import User
+from app.repositories.revoked_token_repository import is_revoked
 
 bearer_scheme = HTTPBearer()
 
@@ -54,6 +55,10 @@ async def get_current_user(
 ):
 
     payload = decode_token(credentials.credentials)
+    # Check if token has been revoked
+    jti = payload.get("jti")
+    if jti and await is_revoked(db, jti):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido o revocado")
     user_id = payload.get("sub")
 
     if not user_id:
