@@ -82,9 +82,8 @@ jobs:
 
       - name: Install Trivy CLI
         run: |
-          curl -sSL "https://github.com/aquasecurity/trivy/releases/latest/download/trivy_$(uname -s)_$(uname -m).tar.gz" -o trivy.tar.gz
-          tar -xzf trivy.tar.gz
-          sudo mv trivy /usr/local/bin/trivy || sudo mv trivy /usr/bin/trivy || true
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin latest
+          trivy --version
 
       - name: Run Trivy image scan
         run: |
