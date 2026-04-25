@@ -39,7 +39,7 @@ jobs:
           gcloud artifacts repositories create "$REPO" \
             --repository-format=docker --location="$LOCATION" --project="$PROJECT" || true
 
-        - name: Check Alembic migrations (single head)
+      - name: Check Alembic migrations (single head)
         run: |
           python - <<'PY'
           import os, re, sys
