@@ -38,13 +38,18 @@ class ImageWorkerPool:
         self.max_workers = max_workers
         self._queue: asyncio.Queue[Optional[ImageJob]] = asyncio.Queue()
         self._workers: list[asyncio.Task] = []
-        self._executor = ProcessPoolExecutor(max_workers=max_workers)
+        # create executor lazily to avoid expensive process spawn at import/startup
+        self._executor: Optional[ProcessPoolExecutor] = None
         self._started = False
 
     async def start(self):
         if self._started:
             return
         self._started = True
+        # create the process pool executor when actually starting
+        if self._executor is None:
+            self._executor = ProcessPoolExecutor(max_workers=self.max_workers)
+
         for _ in range(self.max_workers):
             self._workers.append(asyncio.create_task(self._worker_loop()))
 
@@ -61,6 +66,10 @@ class ImageWorkerPool:
         self._started = False
 
     async def submit(self, image_bytes: bytes, width: int, height: int, quality: int) -> tuple[bytes, str]:
+        # ensure pool is started lazily on first submit
+        if not self._started:
+            await self.start()
+
         loop = asyncio.get_running_loop()
         result_future: asyncio.Future = loop.create_future()
         await self._queue.put(

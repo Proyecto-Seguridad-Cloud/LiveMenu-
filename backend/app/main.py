@@ -21,10 +21,10 @@ limiter = Limiter(key_func=get_remote_address)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await image_worker_pool.start()
     try:
         yield
     finally:
+        # stop will no-op if pool was never started (lazy start)
         await image_worker_pool.stop()
 
 app = FastAPI(title="LiveMenu API", version="1.0.0", lifespan=lifespan)
