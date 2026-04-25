@@ -45,13 +45,15 @@ jobs:
         run: |
           docker build -f backend/Dockerfile.prod -t livemenu-test:latest .
 
+      - name: Install Trivy CLI
+        run: |
+          curl -sSL "https://github.com/aquasecurity/trivy/releases/latest/download/trivy_$(uname -s)_$(uname -m).tar.gz" -o trivy.tar.gz
+          tar -xzf trivy.tar.gz
+          sudo mv trivy /usr/local/bin/trivy || sudo mv trivy /usr/bin/trivy || true
+
       - name: Run Trivy image scan
-        uses: aquasecurity/trivy-action@v2
-        with:
-          image-ref: livemenu-test:latest
-          format: 'table'
-          exit-code: '1'
-          severity: 'CRITICAL'
+        run: |
+          trivy image --severity CRITICAL --exit-code 1 --format table livemenu-test:latest
 
   build-and-publish:
     needs: [lint, test-and-scan]
