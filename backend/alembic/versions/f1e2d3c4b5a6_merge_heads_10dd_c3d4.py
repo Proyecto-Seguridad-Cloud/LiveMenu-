@@ -9,8 +9,6 @@ in the repository. It intentionally contains no schema changes.
 """
 from typing import Sequence, Union
 
-from alembic import op
-
 
 # revision identifiers, used by Alembic.
 revision: str = "f1e2d3c4b5a6"
