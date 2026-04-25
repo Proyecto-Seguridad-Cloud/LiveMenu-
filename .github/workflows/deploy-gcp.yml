@@ -42,27 +42,50 @@ jobs:
       - name: Check Alembic migrations (single head)
         run: |
           python - <<'PY'
-          import os, re, sys
+          import ast, os, sys
+
           path = 'backend/alembic/versions'
           files = [f for f in os.listdir(path) if f.endswith('.py')]
-          re_rev = re.compile(r"^revision:.*['\"]([0-9a-f]+)['\"]", re.M)
-          re_down = re.compile(r"^down_revision:.*['\"]([0-9a-f, ]*)['\"]", re.M)
+
+          def extract_revision_info(text):
+            tree = ast.parse(text)
+            rev = None
+            down = None
+            for node in tree.body:
+              if isinstance(node, ast.Assign):
+                for target in node.targets:
+                  if getattr(target, 'id', None) == 'revision':
+                    if isinstance(node.value, ast.Constant):
+                      rev = str(node.value.value)
+                  if getattr(target, 'id', None) == 'down_revision':
+                    val = node.value
+                    if isinstance(val, ast.Constant):
+                      down = val.value
+                    elif isinstance(val, (ast.Tuple, ast.List)):
+                      parts = []
+                      for elt in val.elts:
+                        if isinstance(elt, ast.Constant):
+                          parts.append(str(elt.value))
+                      down = tuple(parts)
+            return rev, down
+
           revisions = {}
           for fn in files:
             txt = open(os.path.join(path, fn), 'r', encoding='utf-8').read()
-            m = re_rev.search(txt)
-            if not m:
+            rev, down = extract_revision_info(txt)
+            if rev:
+              revisions[rev] = down
+
+          # build children set
+          children = set()
+          for v in revisions.values():
+            if v is None:
               continue
-            rev = m.group(1)
-            m2 = re_down.search(txt)
-            down = None
-            if m2:
-              down = m2.group(1).strip()
-              if down == 'None' or down == '' or down == 'None':
-                down = None
-            revisions[rev] = down
-          # compute heads: revisions that are not referenced as down_revision by any file
-          children = set(v for v in revisions.values() if v)
+            if isinstance(v, (list, tuple)):
+              children.update(v)
+            else:
+              children.add(v)
+
           heads = [r for r in revisions.keys() if r not in children]
           if len(heads) > 1:
             print(f"ERROR: Multiple alembic heads detected: {heads}")
