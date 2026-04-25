@@ -121,4 +121,11 @@ jobs:
           REGION=${{ secrets.GCP_REGION }}
           SERVICE=livemenu-backend
           IMAGE=${LOCATION}-docker.pkg.dev/${PROJECT}/livemenu-repo/livemenu-backend:${{ github.sha }}
-          gcloud run deploy $SERVICE --image "$IMAGE" --region "$REGION" --platform managed --allow-unauthenticated --project "$PROJECT"
+          # Map secrets from Secret Manager to environment variables in Cloud Run
+          gcloud run deploy $SERVICE \
+            --image "$IMAGE" \
+            --region "$REGION" \
+            --platform managed \
+            --allow-unauthenticated \
+            --project "$PROJECT" \
+            --set-secrets DB_USER=db-user:latest,DB_PASSWORD=db-password:latest,DB_NAME=db-name:latest,DB_HOST=db-host:latest,JWT_SECRET_KEY=jwt-secret:latest
