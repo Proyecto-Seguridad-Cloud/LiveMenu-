@@ -10,8 +10,7 @@ ENV VITE_APP_NAME=${VITE_APP_NAME}
 COPY package*.json ./
 COPY tsconfig*.json ./
 COPY vite.config.* ./
-
-RUN npm ci --silent
+RUN npm install
 
 COPY . .
 
