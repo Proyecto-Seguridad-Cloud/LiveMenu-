@@ -66,6 +66,11 @@ jobs:
             sleep 1
           done
 
+      - name: Run DB migrations
+        working-directory: backend
+        run: |
+          alembic upgrade head
+
       - name: Run tests
         working-directory: backend
         run: |
