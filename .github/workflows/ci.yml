@@ -78,7 +78,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -f backend/Dockerfile.prod -t livemenu-test:latest .
+          docker build -f backend/Dockerfile.prod -t livemenu-test:latest backend
 
       - name: Install Trivy CLI
         run: |
@@ -112,6 +112,6 @@ jobs:
           if [ -z "${{ secrets.DOCKERHUB_USERNAME }}" ] || [ -z "${{ secrets.DOCKERHUB_TOKEN }}" ]; then
             echo "No registry credentials configured; skipping publish"
           else
-            docker build -f backend/Dockerfile.prod -t ${{ secrets.DOCKERHUB_USERNAME }}/livemenu:latest .
+            docker build -f backend/Dockerfile.prod -t ${{ secrets.DOCKERHUB_USERNAME }}/livemenu:latest backend
             docker push ${{ secrets.DOCKERHUB_USERNAME }}/livemenu:latest
           fi
