@@ -1,12 +1,31 @@
-FROM node:20-alpine
-
+FROM node:18-alpine AS builder
 WORKDIR /app
 
+ARG VITE_API_BASE_URL
+ARG VITE_APP_NAME
+
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_APP_NAME=${VITE_APP_NAME}
+
 COPY package*.json ./
-RUN npm install
+COPY tsconfig*.json ./
+COPY vite.config.* ./
+
+RUN npm ci --silent
 
 COPY . .
 
-EXPOSE 5173
+RUN npm run build
 
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+FROM nginx:stable-alpine AS runtime
+RUN apk add --no-cache gettext
+
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf.template /etc/nginx/conf.d/default.conf.template
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+EXPOSE 8080
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
