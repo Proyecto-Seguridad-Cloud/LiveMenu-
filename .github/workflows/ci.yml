@@ -21,6 +21,15 @@ jobs:
 
   test-and-scan:
     runs-on: ubuntu-latest
+    env:
+      DB_USER: livemenu
+      DB_PASSWORD: livemenu
+      DB_NAME: livemenudb
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      JWT_SECRET_KEY: testsecretkeyforci
+      STORAGE_PROVIDER: local
+      UPLOAD_DIR: uploads
 
     steps:
       - name: Checkout
