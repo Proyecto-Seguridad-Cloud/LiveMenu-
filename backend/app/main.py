@@ -1,4 +1,5 @@
 from pathlib import Path
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -17,7 +18,15 @@ from app.services.image_worker_pool import image_worker_pool
 
 limiter = Limiter(key_func=get_remote_address)
 
-app = FastAPI(title="LiveMenu API", version="1.0.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await image_worker_pool.start()
+    try:
+        yield
+    finally:
+        await image_worker_pool.stop()
+
+app = FastAPI(title="LiveMenu API", version="1.0.0", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -39,16 +48,6 @@ app.include_router(qr_router)
 
 Path(settings.UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
-
-
-@app.on_event("startup")
-async def startup_event():
-    await image_worker_pool.start()
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    await image_worker_pool.stop()
 
 @app.get("/health")
 async def health():

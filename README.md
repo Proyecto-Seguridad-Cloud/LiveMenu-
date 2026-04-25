@@ -199,6 +199,32 @@ docker compose exec backend pytest -q \
 
 ### Error de tablas faltantes
 
+## Notas adicionales importantes
+
+- `JWT_SECRET_KEY`: esta clave se usa para firmar tokens JWT. En `.env.example` hay una clave de ejemplo para desarrollo; en producción debes generar y usar una clave secreta distinta (usa `python -c "import secrets; print(secrets.token_urlsafe(64))"`).
+
+- Revocación de tokens (logout): el backend ahora guarda tokens revocados en la tabla `revoked_tokens`. Antes de usar rutas que dependen de la autenticación (ej. `/api/v1/auth/logout`, `/api/v1/auth/refresh`) asegúrate de haber aplicado las migraciones:
+
+```powershell
+docker compose exec backend alembic upgrade head
+```
+
+- Si al iniciar ves errores de conexión por contraseña (p.ej. `password authentication failed for user "livemenu"`), puede que el volumen de Postgres tenga una contraseña vieja. Para reiniciar limpio y que Postgres use las variables del `.env` actual, recrea los contenedores y volúmenes:
+
+```powershell
+docker compose down -v
+docker compose up --build -d
+docker compose exec backend alembic upgrade head
+```
+
+- Alternativa cuando quieres conservar los datos: cambia la contraseña del usuario `livemenu` dentro del contenedor Postgres para que coincida con `DB_PASSWORD` en tu `.env`:
+
+```powershell
+docker compose exec livemenuDB psql -U postgres -c "ALTER USER livemenu WITH PASSWORD 'tu_contraseña';"
+```
+
+Estas notas ayudan a evitar problemas de reproducibilidad local y aseguran que la autenticación y revocación de tokens funcionen correctamente.
+
 - Ejecutar migraciones: `docker compose exec backend alembic upgrade head`.
 
 ### Upload en GCS falla por credenciales
@@ -260,4 +286,24 @@ curl -s -X POST http://localhost:8000/api/v1/admin/categories \
 ```
 
 Nota: la documentación interactiva está disponible en `http://localhost:8000/docs` (Swagger UI) y `http://localhost:8000/redoc`.
+
+## 11) Producción, CI y despliegue
+
+Se incluye un `Dockerfile` orientado a producción en `backend/Dockerfile.prod` y un workflow de CI en `.github/workflows/ci.yml`.
+
+- Para construir la imagen de producción localmente:
+
+```bash
+docker build -f backend/Dockerfile.prod -t livemenu:latest .
+```
+
+- Ejecutar desde la imagen (necesitas pasar variables de entorno usando `--env-file` o variables del entorno):
+
+```bash
+docker run -p 8000:8000 --env-file .env -e PORT=8000 livemenu:latest
+```
+
+- El workflow de CI realiza lint, tests y un escaneo de vulnerabilidades con Trivy. Si quieres publicar la imagen desde CI, añade `DOCKERHUB_USERNAME` y `DOCKERHUB_TOKEN` a los secrets del repositorio.
+
+- Recomendación para producción: desplegar en un servicio gestionado (Cloud Run, ECS, etc.), usar Secrets Manager del proveedor para las credenciales, habilitar HTTPS con certificados gestionados, y configurar backups automáticos para la base de datos.
 
