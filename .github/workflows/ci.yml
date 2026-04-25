@@ -66,19 +66,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Log in to registry
-        if: ${{ secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN }}
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and push
-        if: ${{ secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN }}
+      - name: Log in to registry (if credentials available)
         run: |
-          docker build -f backend/Dockerfile.prod -t ${{ secrets.DOCKERHUB_USERNAME }}/livemenu:latest .
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/livemenu:latest
+          if [ -z "${{ secrets.DOCKERHUB_USERNAME }}" ] || [ -z "${{ secrets.DOCKERHUB_TOKEN }}" ]; then
+            echo "No registry credentials configured; skipping login"
+          else
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+          fi
 
-      - name: Publish skipped
-        if: ${{ !secrets.DOCKERHUB_USERNAME || !secrets.DOCKERHUB_TOKEN }}
-        run: echo "No registry credentials configured; skip publish"
+      - name: Build and push (if credentials available)
+        run: |
+          if [ -z "${{ secrets.DOCKERHUB_USERNAME }}" ] || [ -z "${{ secrets.DOCKERHUB_TOKEN }}" ]; then
+            echo "No registry credentials configured; skipping publish"
+          else
+            docker build -f backend/Dockerfile.prod -t ${{ secrets.DOCKERHUB_USERNAME }}/livemenu:latest .
+            docker push ${{ secrets.DOCKERHUB_USERNAME }}/livemenu:latest
+          fi
