@@ -129,3 +129,20 @@ jobs:
             --allow-unauthenticated \
             --project "$PROJECT" \
             --set-secrets DB_USER=db-user:latest,DB_PASSWORD=db-password:latest,DB_NAME=db-name:latest,DB_HOST=db-host:latest,JWT_SECRET_KEY=jwt-secret:latest
+
+      - name: Smoke test service
+        run: |
+          PROJECT=${{ secrets.GCP_PROJECT }}
+          REGION=${{ secrets.GCP_REGION }}
+          SERVICE=livemenu-backend
+          URL=$(gcloud run services describe $SERVICE --region $REGION --project $PROJECT --format='value(status.url)')
+          echo "Service URL: $URL"
+          for i in 1 2 3; do
+            HTTP=$(curl -s -o /dev/null -w "%{http_code}" $URL/health || true)
+            echo "health status: $HTTP"
+            if [ "$HTTP" = "200" ]; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Smoke test failed"; exit 1
