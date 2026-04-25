@@ -307,3 +307,39 @@ docker run -p 8000:8000 --env-file .env -e PORT=8000 livemenu:latest
 
 - Recomendación para producción: desplegar en un servicio gestionado (Cloud Run, ECS, etc.), usar Secrets Manager del proveedor para las credenciales, habilitar HTTPS con certificados gestionados, y configurar backups automáticos para la base de datos.
 
+## 12) GCP Deployment (Entrega No.2)
+
+Se ha incluido un esqueleto Terraform en `infra/` para desplegar los recursos básicos en GCP: Cloud Run (backend), Cloud SQL (Postgres), Cloud Storage (buckets de imágenes) y Secret Manager.
+
+Pasos resumidos:
+
+1. Definir variables de Terraform (ejemplo):
+
+```bash
+export TF_VAR_project_id=your-gcp-project-id
+export TF_VAR_region=us-central1
+export TF_VAR_backend_image=gcr.io/your-gcp-project-id/livemenu-backend:latest
+```
+
+2. Inicializar y planear:
+
+```bash
+cd infra
+terraform init
+terraform plan
+```
+
+3. Revisar, ajustar y aplicar (solo cuando estés listo y con las credenciales correctas):
+
+```bash
+terraform apply
+```
+
+Notas de seguridad relevantes:
+- No incluir valores secretos en el código o en el state de Terraform; provisiona `secret_version` desde CI o importa secretos ya creados en `Secret Manager`.
+- Configura `Cloud SQL` con backups diarios y `availability_type = "REGIONAL"` para alta disponibilidad.
+- Habilita `bucket` versioning y encription en `Cloud Storage`.
+
+Consulta `infra/README.md` para más detalles y plantillas.
+
+
