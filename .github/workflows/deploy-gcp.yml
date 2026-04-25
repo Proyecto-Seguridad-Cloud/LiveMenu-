@@ -1,0 +1,46 @@
+name: Deploy to GCP (Cloud Run)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check GCP secrets
+        run: |
+          if [ -z "${{ secrets.GCP_SA_KEY }}" ] || [ -z "${{ secrets.GCP_PROJECT }}" ]; then
+            echo "GCP secrets not configured. Skipping deploy.";
+            exit 0;
+          fi
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          project_id: ${{ secrets.GCP_PROJECT }}
+
+      - name: Configure docker auth for GCR
+        run: gcloud auth configure-docker --quiet
+
+      - name: Build and push backend image
+        run: |
+          docker build -f backend/Dockerfile.prod -t gcr.io/${{ secrets.GCP_PROJECT }}/livemenu-backend:${{ github.sha }} backend
+          docker push gcr.io/${{ secrets.GCP_PROJECT }}/livemenu-backend:${{ github.sha }}
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy livemenu-backend \
+            --image gcr.io/${{ secrets.GCP_PROJECT }}/livemenu-backend:${{ github.sha }} \
+            --region ${{ secrets.GCP_REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --project ${{ secrets.GCP_PROJECT }}

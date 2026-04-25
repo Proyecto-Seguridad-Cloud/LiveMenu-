@@ -1,7 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
 from app.repositories.user_repository import get_user_by_email, create_user
-from app.core.security import hash_password, verify_password, create_access_token
+from app.core.security import hash_password, verify_password, create_access_token, decode_token
+from app.repositories.revoked_token_repository import revoke_token
+from datetime import datetime
+
 
 
 class AuthService:
@@ -33,4 +36,20 @@ class AuthService:
 
     @staticmethod
     def logout() -> dict:
+        # Legacy placeholder kept for tests that expect a simple message.
+        return {"message": "Sesión cerrada correctamente"}
+
+    @staticmethod
+    async def revoke(db: AsyncSession, token: str) -> dict:
+        # Decode token to get jti and exp
+        payload = decode_token(token)
+        jti = payload.get("jti")
+        exp_ts = payload.get("exp")
+        expires_at = None
+        if exp_ts:
+            expires_at = datetime.fromtimestamp(int(exp_ts))
+
+        if jti:
+            await revoke_token(db, jti, expires_at)
+
         return {"message": "Sesión cerrada correctamente"}
