@@ -128,7 +128,7 @@ jobs:
             --platform managed \
             --allow-unauthenticated \
             --project "$PROJECT" \
-            --set-secrets DB_USER=db-user:latest,DB_PASSWORD=db-password:latest,DB_NAME=db-name:latest,DB_HOST=db-host:latest,JWT_SECRET_KEY=jwt-secret:latest
+            --set-secrets DB_USER=db-user:latest,DB_PASSWORD=db-password:latest,DB_NAME=db-name:latest,DB_HOST=db-host:latest,DB_PORT=db-port:latest,JWT_SECRET_KEY=jwt-secret:latest,GCS_BUCKET_NAME=gcs-bucket-name:latest
 
       - name: Smoke test service
         run: |
