@@ -23,12 +23,12 @@ jobs:
         uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
+          export_environment_variables: true
 
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ secrets.GCP_PROJECT }}
-          export_default_credentials: true
 
       - name: Ensure Artifact Registry repo exists
         run: |
@@ -128,6 +128,9 @@ jobs:
             --platform managed \
             --allow-unauthenticated \
             --project "$PROJECT" \
+            --service-account livemenu-backend-sa@${PROJECT}.iam.gserviceaccount.com \
+            --add-cloudsql-instances ${PROJECT}:${REGION}:livemenu-sql \
+            --set-env-vars STORAGE_PROVIDER=gcs,GCS_PROJECT_ID=${PROJECT},GCS_PUBLIC_BASE_URL=https://storage.googleapis.com,PUBLIC_BASE_URL=https://livemenu-backend-973698200996.us-central1.run.app \
             --set-secrets DB_USER=db-user:latest,DB_PASSWORD=db-password:latest,DB_NAME=db-name:latest,DB_HOST=db-host:latest,DB_PORT=db-port:latest,JWT_SECRET_KEY=jwt-secret:latest,GCS_BUCKET_NAME=gcs-bucket-name:latest
 
       - name: Smoke test service
