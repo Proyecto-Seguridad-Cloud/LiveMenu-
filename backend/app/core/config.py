@@ -22,8 +22,13 @@ class Settings(BaseSettings):
     GCS_CREDENTIALS_FILE: str = ""
     GCS_PUBLIC_BASE_URL: str = "https://storage.googleapis.com"
 
-    @property
-    def DATABASE_URL(self) -> str:
+@property
+def DATABASE_URL(self) -> str:
+    if self.DB_HOST.startswith("/"):
+        # Cloud SQL Unix socket
+        return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@/{self.DB_NAME}?host={self.DB_HOST}"
+    else:
+        # IP directa 
         return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
     @property
